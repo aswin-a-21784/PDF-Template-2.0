@@ -3,33 +3,42 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Procurement - Blanket Purchase Orders</title>
+    <title>Procurement · Blanket Purchase Orders</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
     <div class="app-shell">
-      <aside class="sidebar">
-        <div class="brand">Procurement</div>
-        <nav id="main-nav" class="main-nav"></nav>
-      </aside>
+      <aside class="sidebar" id="sidebar"></aside>
 
-      <main class="workspace">
+      <div class="main-col">
         <header class="topbar">
-          <div>
-            <h1 id="page-title">Blanket Purchase Orders</h1>
-            <p id="page-subtitle" class="muted">Planning workspace for long-term procurement commitments</p>
+          <div class="topbar-left">
+            <span class="app-crumb-icon">&#9635;</span>
+            <span class="app-crumb">Procurement</span>
           </div>
-          <button id="primary-action" class="btn btn-primary">Create Blanket PO</button>
+          <div class="topbar-search">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" placeholder="Search in Purchase Orders ( / )" />
+          </div>
+          <div class="topbar-right">
+            <button class="org-switch">AS Aquarium <span>&#9662;</span></button>
+            <button class="icon-btn icon-btn-primary" title="Create">+</button>
+            <button class="icon-btn" title="Notifications">&#128276;</button>
+            <button class="icon-btn" title="Settings">&#9881;</button>
+            <span class="avatar">A</span>
+            <button class="icon-btn" title="Apps">&#8942;&#8942;</button>
+          </div>
         </header>
 
-        <section id="page-content" class="page-content"></section>
-      </main>
+        <main id="page-root" class="page-root"></main>
+      </div>
     </div>
 
-    <div id="modal-root"></div>
+    <div id="overlay-root"></div>
+    <div id="toast-root"></div>
 
     <script type="module" src="/src/app.js"></script>
   </body>
