@@ -2100,6 +2100,9 @@ document.addEventListener("click", (e) => {
     applySelection(selFromDataset(node.dataset));
     return;
   }
+
+  // Clicking on empty preview canvas (not on any selectable section/column/element) clears selection.
+  if (closest(".preview-pane") && state.selection.type !== "page") { applySelection({ type: "page" }); return; }
 });
 
 /* ===================== Simple field-picker modal (Insert Placeholder) ===================== */
