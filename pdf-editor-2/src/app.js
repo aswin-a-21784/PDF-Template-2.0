@@ -311,8 +311,8 @@ function buildDefaultTemplate() {
       makeElement("field", { label: "Ship To", placeholder: "%Ship_To_Address%", layout: "stacked" }),
     ],
     [
-      makeElement("field", { label: "Receipt Date", placeholder: "%Invoice_Date%", align: "right" }),
-      makeElement("field", { label: "Reference", placeholder: "%Reference_Number%", align: "right" }),
+      makeElement("field", { label: "Receipt Date", placeholder: "%Invoice_Date%" }),
+      makeElement("field", { label: "Reference", placeholder: "%Reference_Number%" }),
     ],
   ])));
 
@@ -606,6 +606,10 @@ function marginBoxGrid(basePath, obj) {
 }
 function alignButtonsHtml(path, value, opts) {
   return `<div class="align-btns">${opts.map((o) => `<button type="button" data-set-path="${path}" data-set-value="${o.value}" class="${value === o.value ? "active" : ""}" title="${o.title}">${o.icon}</button>`).join("")}</div>`;
+}
+const TEXT_ALIGN_OPTS = [{ value: "left", icon: "\u2630", title: "Left" }, { value: "center", icon: "\u2261", title: "Center" }, { value: "right", icon: "\u2637", title: "Right" }];
+function alignRowHtml(path, value) {
+  return `<div class="prow"><span class="prow-label">Alignment</span>${alignButtonsHtml(path, value || "left", TEXT_ALIGN_OPTS)}</div>`;
 }
 function styleButtonsHtml(basePath, el) {
   const b = (key, icon, title) => `<button type="button" data-toggle-path="${basePath}.${key}" class="${el[key] ? "active" : ""}" title="${title}">${icon}</button>`;
@@ -973,6 +977,23 @@ function renderInsertFields() {
 }
 
 /* ===================== Properties panel ===================== */
+// Badge label + delete action shown at the top of the Properties panel header (instead of a
+// full-width "Delete ..." button buried at the bottom of the panel body).
+function propsTypeBadge(sel) {
+  if (sel.type === "header") return "Header";
+  if (sel.type === "footer") return "Footer";
+  if (sel.type === "section") return resolveTarget(sel).isSpacer ? "Spacer" : "Section";
+  if (sel.type === "column") return "Column";
+  if (sel.type === "element") return elementLabel(resolveTarget(sel));
+  if (sel.type === "staticCell") return "Cell";
+  return "";
+}
+function propsDeleteAction(sel) {
+  if (sel.type === "section") return { action: "delete-section", attrs: `data-section="${sel.sectionId}"` };
+  if (sel.type === "column") return { action: "delete-column", attrs: `data-section="${sel.sectionId}" data-column="${sel.columnId}"` };
+  if (sel.type === "element") return { action: "delete-element", attrs: `data-section="${sel.sectionId}" data-column="${sel.columnId}" data-element="${sel.elementId}"` };
+  return null;
+}
 function renderPropertiesPanel() {
   const sel = state.selection;
   if (!sel || sel.type === "page" || !resolveTarget(sel)) {
@@ -986,7 +1007,16 @@ function renderPropertiesPanel() {
   else if (sel.type === "column") body = renderColumnProps(sel);
   else if (sel.type === "element") body = renderElementProps(sel);
   else if (sel.type === "staticCell") body = renderStaticCellProps(sel);
-  return `<div class="panel-header">Properties</div>${crumb}<div class="panel-body">${body}</div>`;
+  const badge = propsTypeBadge(sel);
+  const del = propsDeleteAction(sel);
+  const header = `<div class="panel-header">
+    <div class="panel-header-title">Properties${badge ? ` <span class="type-pill">${escapeHtml(badge)}</span>` : ""}</div>
+    <div class="panel-header-actions">
+      ${del ? `<button type="button" class="panel-icon-btn danger" title="Delete" data-action="${del.action}" ${del.attrs}>&#128465;</button>` : ""}
+      <button type="button" class="panel-icon-btn" title="Close" data-action="deselect">&times;</button>
+    </div>
+  </div>`;
+  return `${header}${crumb}<div class="panel-body">${body}</div>`;
 }
 
 function renderHeaderFooterProps(kind) {
@@ -1045,14 +1075,14 @@ function sectionColumnsControls(prefix, sec, sectionId) {
   </div>
   <div class="col-list-head"><span>Columns</span><span>Width</span></div>
   <div class="col-list">
-    ${sec.columns.map((c, i) => `<div class="col-list-row">
+    ${sec.columns.map((c, i) => `<div class="col-list-row" draggable="true" data-reorder-group="section-cols" data-reorder-index="${i}" data-reorder-section="${sectionId}">
       <span class="drag-handle">&#8942;&#8942;</span>
       <span class="col-list-name">Column ${i + 1}</span>
       ${colWidthInput(`${prefix}.columns`, i, c.width, "width")}
       <span class="muted" style="font-size:11px;">%</span>
     </div>`).join("")}
   </div>
-  <p class="field-note ${Math.round(total) !== 100 ? "error" : ""}">${Math.round(total) !== 100 ? "Column widths must total 100%." : "Note: drag to reorder columns."}</p>`;
+  <p class="field-note ${Math.round(total) !== 100 ? "error" : ""}">${Math.round(total) !== 100 ? "Column widths must total 100%." : "Drag the handle to reorder columns."}</p>`;
 }
 
 function renderSectionProps(sel) {
@@ -1063,9 +1093,6 @@ function renderSectionProps(sel) {
       <p class="pgroup-title">Spacer</p>
       <div class="prow"><span class="prow-label">Height</span>${numInput(`sections[${sectionIdx(sel.sectionId)}].spacerHeight`, sec.spacerHeight)}</div>
       <p class="field-note">A spacer adds empty vertical space between sections. It has no content of its own.</p>
-    </div>
-    <div class="pgroup">
-      <button class="btn btn-outline-dark" style="background:#fff;color:var(--danger);border-color:var(--danger-soft);width:100%;" data-action="delete-section" data-section="${sel.sectionId}">Delete Spacer</button>
     </div>`;
   }
   return `
@@ -1084,9 +1111,6 @@ function renderSectionProps(sel) {
   <div class="pgroup">
     <p class="pgroup-title">Background</p>
     ${backgroundControlsHtml(`sections[${sectionIdx(sel.sectionId)}].bg`, sec.bg, true, false)}
-  </div>
-  <div class="pgroup">
-    <button class="btn btn-outline-dark" style="background:#fff;color:var(--danger);border-color:var(--danger-soft);width:100%;" data-action="delete-section" data-section="${sel.sectionId}">Delete Section</button>
   </div>`;
 }
 function sectionIdx(sectionId) { return state.template.sections.findIndex((s) => s.id === sectionId); }
@@ -1100,7 +1124,6 @@ function renderColumnProps(sel) {
   <div class="pgroup">
     <p class="pgroup-title">Layout &amp; Spacing</p>
     <div class="prow"><span class="prow-label">Column Width</span>${colWidthInput(`${secPrefix}.columns`, colIdx, col.width, "width")}<span class="muted" style="font-size:11px;margin-left:6px;">%</span></div>
-    <div class="prow"><span class="prow-label">Horizontal Alignment</span>${alignButtonsHtml(`${base}.hAlign`, col.hAlign, [{ value: "left", icon: "\u2630", title: "Left" }, { value: "center", icon: "\u2261", title: "Center" }, { value: "right", icon: "\u2637", title: "Right" }])}</div>
     <div class="prow"><span class="prow-label">Vertical Alignment</span>${alignButtonsHtml(`${base}.valign`, col.valign, [{ value: "top", icon: "\u2912", title: "Top" }, { value: "middle", icon: "\u2194", title: "Middle" }, { value: "bottom", icon: "\u2913", title: "Bottom" }])}</div>
     <div class="prow"><span class="prow-label">Row Gap</span>${numInput(`${base}.rowGap`, col.rowGap ?? 0)}</div>
     <div class="prow-stacked"><span class="prow-label">Margin</span>${marginBoxGrid(`${base}.margin`, col.margin)}</div>
@@ -1110,9 +1133,6 @@ function renderColumnProps(sel) {
   <div class="pgroup">
     <p class="pgroup-title">Background</p>
     ${backgroundControlsHtml(`${base}.bg`, col.bg, false, false)}
-  </div>
-  <div class="pgroup">
-    <button class="btn btn-outline-dark" style="background:#fff;color:var(--danger);border-color:var(--danger-soft);width:100%;" data-action="delete-column" data-section="${sel.sectionId}" data-column="${sel.columnId}">Delete Column</button>
   </div>`;
 }
 
@@ -1129,32 +1149,36 @@ function elementPath(sel) { return `${columnPath(sel)}.elements[${findColumn(sel
 function renderElementProps(sel) {
   const el = resolveTarget(sel);
   const base = elementPath(sel);
-  if (el.type === "title") return `<div class="pgroup"><p class="pgroup-title">Content</p>
+  if (el.type === "title") return `<div class="pgroup"><p class="pgroup-title">Layout &amp; Spacing</p>${alignRowHtml(`${base}.align`, el.align)}</div>
+    <div class="pgroup"><p class="pgroup-title">Content</p>
     <div class="prow-stacked"><span class="prow-label">Text</span><input class="text-input" data-path="${base}.text" data-parse="string" value="${escapeHtml(el.text)}"/></div></div>
-    <div class="pgroup"><p class="pgroup-title">Formatting</p>${typographyControlsHtml(base, el, { resetDefaults: { font: "", color: "", size: 16, lineHeight: "", align: "left", bold: true, italic: false, underline: false, strike: false } })}</div>${deleteElBtn(sel)}`;
-  if (el.type === "text") return `<div class="pgroup"><p class="pgroup-title">Content</p>
+    <div class="pgroup"><p class="pgroup-title">Formatting</p>${typographyControlsHtml(base, el, { align: false, resetDefaults: { font: "", color: "", size: 16, lineHeight: "", bold: true, italic: false, underline: false, strike: false } })}</div>${deleteElBtn(sel)}`;
+  if (el.type === "text") return `<div class="pgroup"><p class="pgroup-title">Layout &amp; Spacing</p>${alignRowHtml(`${base}.align`, el.align)}</div>
+    <div class="pgroup"><p class="pgroup-title">Content</p>
     <p class="field-note">Rich text. Placeholders like %Customer_Displayname% or {{Field}} are supported inline.</p>
     <textarea class="text-input" rows="4" data-path="${base}.html" data-parse="string">${escapeHtml(el.html)}</textarea>
     <div style="margin-top:6px;"><button type="button" class="btn btn-outline-dark" style="background:#fff;color:var(--text);border-color:var(--border-strong);" data-action="open-field-picker" data-target="${base}.html">Insert Placeholder</button></div>
     </div>
-    <div class="pgroup"><p class="pgroup-title">Formatting</p>${typographyControlsHtml(base, el)}</div>${deleteElBtn(sel)}`;
-  if (el.type === "field") return `<div class="pgroup"><p class="pgroup-title">Content</p>
+    <div class="pgroup"><p class="pgroup-title">Formatting</p>${typographyControlsHtml(base, el, { align: false, resetDefaults: { font: "", color: "", size: "", lineHeight: "", bold: false, italic: false, underline: false, strike: false } })}</div>${deleteElBtn(sel)}`;
+  if (el.type === "field") { const isSpaceBetween = (el.layout || "spaceBetween") === "spaceBetween"; return `<div class="pgroup"><p class="pgroup-title">Layout &amp; Spacing</p>
+    <div class="prow"><span class="prow-label">Label &amp; Value Layout</span>${selectInput(`${base}.layout`, el.layout || "spaceBetween", [{ value: "spaceBetween", label: "Space Between" }, { value: "inline", label: "Inline" }, { value: "stacked", label: "Stacked" }])}</div>
+    ${(el.layout || "spaceBetween") === "inline" ? `<div class="prow"><span class="prow-label">Gap</span>${numInput(`${base}.gap`, el.gap ?? 8)}</div>` : ""}
+    ${alignRowHtml(isSpaceBetween ? `${base}.labelAlign` : `${base}.align`, isSpaceBetween ? el.labelAlign : el.align)}
+    </div>
+    <div class="pgroup"><p class="pgroup-title">Content</p>
     <div class="prow-stacked"><span class="prow-label">Label</span><input class="text-input" data-path="${base}.label" data-parse="string" value="${escapeHtml(el.label)}"/></div>
     <div class="prow-stacked"><span class="prow-label">Value / Placeholder</span>
       <select class="select-input" data-path="${base}.placeholder" data-parse="string">${allModuleFields().map((f) => `<option value="${f.placeholder}" ${el.placeholder === f.placeholder ? "selected" : ""}>${f.placeholder}</option>`).join("")}</select>
     </div>
-    <div class="prow"><span class="prow-label">Label &amp; Value Layout</span>${selectInput(`${base}.layout`, el.layout || "spaceBetween", [{ value: "spaceBetween", label: "Space Between" }, { value: "inline", label: "Inline" }, { value: "stacked", label: "Stacked" }])}</div>
-    ${(el.layout || "spaceBetween") === "inline" ? `<div class="prow"><span class="prow-label">Gap</span>${numInput(`${base}.gap`, el.gap ?? 8)}</div>` : ""}
-    ${(el.layout || "spaceBetween") === "spaceBetween" ? `<div class="prow"><span class="prow-label">Label Alignment</span>${alignButtonsHtml(`${base}.labelAlign`, el.labelAlign || "left", [{ value: "left", icon: "\u2630", title: "Left" }, { value: "center", icon: "\u2261", title: "Center" }, { value: "right", icon: "\u2637", title: "Right" }])}</div>` : ""}
-    ${(el.layout || "spaceBetween") !== "spaceBetween" ? `<div class="prow"><span class="prow-label">Alignment</span>${alignButtonsHtml(`${base}.align`, el.align || "left", [{ value: "left", icon: "\u2630", title: "Left" }, { value: "center", icon: "\u2261", title: "Center" }, { value: "right", icon: "\u2637", title: "Right" }])}</div>` : ""}
     </div>
     <div class="pgroup"><p class="pgroup-title">Label Formatting</p>${typographyControlsHtml(`${base}.labelStyle`, el.labelStyle || {}, { align: false, lineHeight: false, resetDefaults: { font: "", color: "", size: "", bold: true, italic: false, underline: false, strike: false } })}</div>
-    <div class="pgroup"><p class="pgroup-title">Value Formatting</p>${typographyControlsHtml(base, el, { align: false, resetDefaults: { font: "", color: "", size: "", lineHeight: "", bold: false, italic: false, underline: false, strike: false } })}</div>${deleteElBtn(sel)}`;
-  if (el.type === "pageNumber") return `<div class="pgroup"><p class="pgroup-title">Page Number</p>
+    <div class="pgroup"><p class="pgroup-title">Value Formatting</p>${typographyControlsHtml(base, el, { align: false, resetDefaults: { font: "", color: "", size: "", lineHeight: "", bold: false, italic: false, underline: false, strike: false } })}</div>${deleteElBtn(sel)}`; }
+  if (el.type === "pageNumber") return `<div class="pgroup"><p class="pgroup-title">Layout &amp; Spacing</p>${alignRowHtml(`${base}.align`, el.align || "right")}</div>
+    <div class="pgroup"><p class="pgroup-title">Page Number</p>
     <div class="prow-stacked"><span class="prow-label">Custom Format</span><input class="text-input" data-path="${base}.customFormat" data-parse="string" value="${escapeHtml(el.customFormat)}"/></div>
     <p class="field-note">Placeholders: {{CurrentPageNumber}}, {{TotalPages}}, {{DocId}}</p>
     </div>
-    <div class="pgroup"><p class="pgroup-title">Formatting</p>${typographyControlsHtml(base, el, { style: false, resetDefaults: { font: "", color: "", size: 10, lineHeight: "" } })}</div>${deleteElBtn(sel)}`;
+    <div class="pgroup"><p class="pgroup-title">Formatting</p>${typographyControlsHtml(base, el, { style: false, align: false, resetDefaults: { font: "", color: "", size: 10, lineHeight: "" } })}</div>${deleteElBtn(sel)}`;
   if (el.type === "image" || el.type === "logo") return `<div class="pgroup"><p class="pgroup-title">Content</p>
     <div style="display:flex;align-items:center;gap:8px;">
       ${el.src ? `<img src="${el.src}" style="width:60px;height:36px;object-fit:contain;border-radius:6px;border:1px solid var(--border-strong);"/>` : ""}
@@ -1177,8 +1201,9 @@ function renderElementProps(sel) {
   if (el.type === "staticTable") return renderStaticTableProps(sel, el, base);
   return "";
 }
+// Delete for the selected element now lives at the top of the Properties panel (see propsDeleteAction).
 function deleteElBtn(sel) {
-  return `<div class="pgroup"><button class="btn btn-outline-dark" style="background:#fff;color:var(--danger);border-color:var(--danger-soft);width:100%;" data-action="delete-element" data-section="${sel.sectionId}" data-column="${sel.columnId}" data-element="${sel.elementId}">Delete Element</button></div>`;
+  return "";
 }
 
 function renderDynamicTableProps(sel, el, base) {
@@ -1378,10 +1403,45 @@ function applySelection(sel) {
   renderAll();
 }
 
-function renderElementHtml(el, sel, sectionId, columnId) {
+function selectionActionBar(kind, ids, canMoveUp, canMoveDown) {
+  const attrs = Object.entries(ids).map(([k, v]) => `data-${k}="${v}"`).join(" ");
+  return `<div class="sel-action-bar">
+    <button type="button" class="sab-btn" title="Move Up" data-action="move-${kind}" data-dir="-1" ${attrs} ${canMoveUp ? "" : "disabled"}>&#9650;</button>
+    <button type="button" class="sab-btn" title="Move Down" data-action="move-${kind}" data-dir="1" ${attrs} ${canMoveDown ? "" : "disabled"}>&#9660;</button>
+    <span class="sab-divider"></span>
+    <button type="button" class="sab-btn" title="Duplicate" data-action="duplicate-${kind}" ${attrs}>&#10064;</button>
+    <button type="button" class="sab-btn sab-danger" title="Delete" data-action="delete-${kind}" ${attrs}>&#128465;</button>
+  </div>`;
+}
+function moveArrayItem(arr, index, dir) {
+  const target = index + dir;
+  if (index < 0 || target < 0 || target >= arr.length) return;
+  [arr[index], arr[target]] = [arr[target], arr[index]];
+}
+function cloneElementWithNewIds(el) {
+  const copy = deepClone(el);
+  copy.id = uid("el");
+  if (copy.columns) copy.columns.forEach((c) => (c.id = uid("tc")));
+  return copy;
+}
+function cloneColumnWithNewIds(col) {
+  const copy = deepClone(col);
+  copy.id = uid("col");
+  copy.elements = copy.elements.map((el) => cloneElementWithNewIds(el));
+  return copy;
+}
+function cloneSectionWithNewIds(sec) {
+  const copy = deepClone(sec);
+  copy.id = uid("sec");
+  copy.columns = copy.columns.map((col) => cloneColumnWithNewIds(col));
+  return copy;
+}
+
+function renderElementHtml(el, sel, sectionId, columnId, index, total) {
   const selected = isSelected("element", { section: sectionId, column: columnId, element: el.id });
   const attrs = selTagAttrs("element", { section: sectionId, column: columnId, element: el.id });
-  const wrap = (inner, tag = "div") => `<${tag} class="selectable col-el ${selected ? "is-selected" : ""}" ${attrs}><span class="sel-tag">${elementLabel(el)}${elActionButtons(sectionId, columnId, el.id)}</span>${inner}</${tag}>`;
+  const actionBar = selected ? selectionActionBar("element", { section: sectionId, column: columnId, element: el.id }, index > 0, index < total - 1) : "";
+  const wrap = (inner, tag = "div") => `<${tag} class="selectable col-el ${selected ? "is-selected" : ""}" ${attrs}><span class="sel-tag">${elementLabel(el)}</span>${actionBar}${inner}</${tag}>`;
   const font = el.font || state.template.page.typography.font;
   const size = el.size || state.template.page.typography.size;
   const color = el.color || state.template.page.typography.color;
@@ -1411,11 +1471,6 @@ function renderElementHtml(el, sel, sectionId, columnId) {
   return wrap("");
 }
 
-function elActionButtons(sectionId, columnId, elementId) {
-  return `<button type="button" class="tag-act" title="Duplicate" data-action="duplicate-element" data-section="${sectionId}" data-column="${columnId}" data-element="${elementId}">&#10064;</button>
-  <button type="button" class="tag-act" title="Delete" data-action="delete-element" data-section="${sectionId}" data-column="${columnId}" data-element="${elementId}">&times;</button>`;
-}
-
 function renderDynamicTableHtml(el, sectionId, columnId) {
   const rows = el.sampleRows;
   const layoutStyle = (c) => `width:${c.width}%;text-align:${c.align || "left"};padding:${el.cellPadding}px;`;
@@ -1441,23 +1496,21 @@ function renderStaticTableHtml(el, sectionId, columnId) {
   return `<table class="doc-table tbl-${el.style}" style="border-radius:${el.cornerRadius}px;overflow:hidden;">${rowsHtml}</table>`;
 }
 
-function renderColumnHtml(col, sectionId) {
+function renderColumnHtml(col, sectionId, index, total) {
   const selected = isSelected("column", { section: sectionId, column: col.id });
   const attrs = selTagAttrs("column", { section: sectionId, column: col.id });
   const bg = col.bg && col.bg.color ? `background:${col.bg.color};` : "";
   const border = col.border && col.border.enabled ? `border:${col.border.width}px solid ${col.border.color};border-radius:${col.border.radius}px;` : "";
   const style = `flex:${col.width} 0 0%;text-align:${col.hAlign || "left"};justify-content:${col.valign === "middle" ? "center" : col.valign === "bottom" ? "flex-end" : "flex-start"};padding:${col.padding.t}px ${col.padding.r}px ${col.padding.b}px ${col.padding.l}px;margin:${col.margin.t}px ${col.margin.r}px ${col.margin.b}px ${col.margin.l}px;${bg}${border}`;
   const inner = col.elements.length
-    ? col.elements.map((el) => renderElementHtml(el, state.selection, sectionId, col.id)).join("")
+    ? col.elements.map((el, i) => renderElementHtml(el, state.selection, sectionId, col.id, i, col.elements.length)).join("")
     : `<div class="dropzone-empty" data-dropzone="column" data-section="${sectionId}" data-column="${col.id}">Drag &amp; Drop Components Here</div>`;
+  const actionBar = selected ? selectionActionBar("column", { section: sectionId, column: col.id }, index > 0, index < total - 1) : "";
   return `<div class="selectable sec-col ${selected ? "is-selected" : ""}" ${attrs} style="${style}" data-dropzone-col="${sectionId}:${col.id}">
-    <span class="sel-tag">Column${elActionButtons2("column", sectionId, col.id)}</span>
+    <span class="sel-tag">Column</span>
+    ${actionBar}
     <div class="col-inner" style="gap:${col.rowGap ?? 0}px;">${inner}</div>
   </div>`;
-}
-function elActionButtons2(kind, sectionId, columnId) {
-  if (kind !== "column") return "";
-  return `<button type="button" class="tag-act" title="Delete Column" data-action="delete-column" data-section="${sectionId}" data-column="${columnId}">&times;</button>`;
 }
 
 function extendBleedStyle(insetLeft, insetRight) {
@@ -1465,8 +1518,8 @@ function extendBleedStyle(insetLeft, insetRight) {
   // background/border bleeds all the way to the page edge, re-applying padding to keep content aligned.
   return `margin-left:-${insetLeft}px;margin-right:-${insetRight}px;width:calc(100% + ${insetLeft + insetRight}px);padding-left:${insetLeft}px;padding-right:${insetRight}px;box-sizing:border-box;`;
 }
-function renderSectionHtml(sec, sectionId, kind) {
-  if (sec.isSpacer) return renderSpacerSectionHtml(sec, sectionId);
+function renderSectionHtml(sec, sectionId, kind, index, total) {
+  if (sec.isSpacer) return renderSpacerSectionHtml(sec, sectionId, index, total);
   const selType = kind || "section";
   const selected = isSelected(selType, { section: sectionId });
   const attrs = selTagAttrs(selType, { section: sectionId });
@@ -1479,16 +1532,20 @@ function renderSectionHtml(sec, sectionId, kind) {
   }
   const label = kind === "header" ? "Header" : kind === "footer" ? "Footer" : sectionIndexLabel(sectionId);
   const valign = `align-items:${sec.valign === "middle" ? "center" : sec.valign === "bottom" ? "flex-end" : "flex-start"};`;
-  return `<div class="selectable ${kind ? "doc-" + kind : "doc-section"}" ${attrs} style="${style}">
+  const actionBar = !kind && selected ? selectionActionBar("section", { section: sectionId }, index > 0, index < total - 1) : "";
+  return `<div class="selectable ${kind ? "doc-" + kind : "doc-section"} ${selected ? "is-selected" : ""}" ${attrs} style="${style}">
     <span class="sel-tag">${label}</span>
-    <div class="sec-columns" style="${valign}">${sec.columns.map((c) => renderColumnHtml(c, sectionId)).join("")}</div>
+    ${actionBar}
+    <div class="sec-columns" style="${valign}">${sec.columns.map((c, i) => renderColumnHtml(c, sectionId, i, sec.columns.length)).join("")}</div>
   </div>`;
 }
-function renderSpacerSectionHtml(sec, sectionId) {
+function renderSpacerSectionHtml(sec, sectionId, index, total) {
   const selected = isSelected("section", { section: sectionId });
   const attrs = selTagAttrs("section", { section: sectionId });
+  const actionBar = selected ? selectionActionBar("section", { section: sectionId }, index > 0, index < total - 1) : "";
   return `<div class="selectable doc-spacer ${selected ? "is-selected" : ""}" ${attrs} style="height:${sec.spacerHeight || 24}px;">
     <span class="sel-tag">Spacer</span>
+    ${actionBar}
   </div>`;
 }
 
@@ -1517,7 +1574,7 @@ function renderPreview() {
 
   const sectionsHtml = t.sections.map((s, i) => `
     ${sectionDropzoneHtml(i)}
-    ${renderSectionHtml(s, s.id)}
+    ${renderSectionHtml(s, s.id, undefined, i, t.sections.length)}
   `).join("") + sectionDropzoneHtml(t.sections.length);
 
   return `
@@ -1559,8 +1616,9 @@ function renderAnnexurePreview(outerStyle, contentStyle) {
 function sectionDropzoneHtml(idx) {
   return `<div class="section-dropzone" data-dropzone="section" data-index="${idx}">
     <div class="sd-controls">
-      <button type="button" class="sd-add" title="Add empty section" data-action="add-empty-section" data-index="${idx}">+</button>
-      <button type="button" class="sd-spacer" title="Add spacer" data-action="add-spacer" data-index="${idx}">&#8597; Spacer</button>
+      <button type="button" class="sd-pill" title="Add Section" data-action="add-empty-section" data-index="${idx}"><span class="sd-pill-ic">+</span>Add Section</button>
+      <button type="button" class="sd-pill" title="Add Spacer" data-action="add-spacer" data-index="${idx}"><span class="sd-pill-ic">&#8597;</span>Add Spacer</button>
+      <button type="button" class="sd-pill" title="Add Separator" data-action="add-separator" data-index="${idx}"><span class="sd-pill-ic">&#8213;</span>Add Separator</button>
     </div>
   </div>`;
 }
@@ -1664,6 +1722,7 @@ document.addEventListener("click", (e) => {
   const closest = (sel) => e.target.closest(sel);
 
   if (e.target.dataset.backdropDismiss === "true") { state.confirmDialog = null; renderAll(); return; }
+  if (e.target.dataset.backdropDismiss === "field-picker") { closeFieldPickerModal(); return; }
 
   if (closest("[data-toggle-path]")) {
     const path = closest("[data-toggle-path]").dataset.togglePath;
@@ -1795,6 +1854,12 @@ document.addEventListener("click", (e) => {
     insertSectionAt(idx, makeSpacerSection());
     return;
   }
+  if (closest("[data-action='add-separator']")) {
+    const idx = Number(closest("[data-action='add-separator']").dataset.index);
+    insertSectionAt(idx, makeSectionShape([100], [[makeElement("divider")]]));
+    return;
+  }
+  if (closest("[data-action='deselect']")) { applySelection({ type: "page" }); return; }
   if (closest("[data-action='delete-section']")) {
     const d = closest("[data-action='delete-section']").dataset;
     mutate(() => { state.template.sections = state.template.sections.filter((s) => s.id !== d.section); });
@@ -1825,6 +1890,53 @@ document.addEventListener("click", (e) => {
       copy.id = uid("el");
       if (copy.columns) copy.columns.forEach((c) => (c.id = uid("tc")));
       col.elements.splice(idx + 1, 0, copy);
+    });
+    renderAll();
+    return;
+  }
+  if (closest("[data-action='duplicate-column']")) {
+    const d = closest("[data-action='duplicate-column']").dataset;
+    mutate(() => {
+      const sec = findSection(d.section);
+      const idx = sec.columns.findIndex((c) => c.id === d.column);
+      sec.columns.splice(idx + 1, 0, cloneColumnWithNewIds(sec.columns[idx]));
+    });
+    renderAll();
+    return;
+  }
+  if (closest("[data-action='duplicate-section']")) {
+    const d = closest("[data-action='duplicate-section']").dataset;
+    mutate(() => {
+      const arr = state.template.sections;
+      const idx = arr.findIndex((s) => s.id === d.section);
+      arr.splice(idx + 1, 0, cloneSectionWithNewIds(arr[idx]));
+    });
+    renderAll();
+    return;
+  }
+  if (closest("[data-action='move-element']")) {
+    const d = closest("[data-action='move-element']").dataset;
+    mutate(() => {
+      const col = findColumn(d.section, d.column);
+      moveArrayItem(col.elements, col.elements.findIndex((el) => el.id === d.element), Number(d.dir));
+    });
+    renderAll();
+    return;
+  }
+  if (closest("[data-action='move-column']")) {
+    const d = closest("[data-action='move-column']").dataset;
+    mutate(() => {
+      const sec = findSection(d.section);
+      moveArrayItem(sec.columns, sec.columns.findIndex((c) => c.id === d.column), Number(d.dir));
+    });
+    renderAll();
+    return;
+  }
+  if (closest("[data-action='move-section']")) {
+    const d = closest("[data-action='move-section']").dataset;
+    mutate(() => {
+      const arr = state.template.sections;
+      moveArrayItem(arr, arr.findIndex((s) => s.id === d.section), Number(d.dir));
     });
     renderAll();
     return;
@@ -1994,8 +2106,8 @@ document.addEventListener("click", (e) => {
 function renderFieldPickerModal() {
   let host = document.getElementById("field-picker-modal");
   if (!host) { host = document.createElement("div"); host.id = "field-picker-modal"; document.body.appendChild(host); }
-  host.innerHTML = `<div class="confirm-modal-backdrop" data-action="field-picker-close">
-    <div class="confirm-modal" style="width:320px;max-height:70vh;overflow:auto;" onclick="event.stopPropagation()">
+  host.innerHTML = `<div class="confirm-modal-backdrop" data-backdrop-dismiss="field-picker">
+    <div class="confirm-modal" style="width:320px;max-height:70vh;overflow:auto;">
       <h3>Insert Placeholder</h3>
       ${MODULE_FIELD_GROUPS.map((g) => `<p class="field-group-title" style="padding-left:0;">${g.group}</p>${g.fields.map((f) => `<div class="field-row" style="padding:6px 0;cursor:pointer;" data-action="field-picker-insert" data-placeholder="${f.placeholder}"><span class="field-name">${f.label}</span><span class="muted" style="font-size:10.5px;">${f.placeholder}</span></div>`).join("")}`).join("")}
       <div class="modal-actions" style="margin-top:10px;"><button class="btn btn-outline-dark" style="background:#fff;color:var(--text);border-color:var(--border-strong);" data-action="field-picker-close">Close</button></div>
@@ -2010,17 +2122,20 @@ function closeFieldPickerModal() { const host = document.getElementById("field-p
 // dropzones may highlight/accept the drag (module fields/components -> columns only; section
 // presets/module sections -> section gaps only).
 let dragKind = null;
+// Tracked alongside dragKind (dataTransfer isn't reliably readable during dragover) so the
+// Divider component can additionally target the section-gap dropzones (see below).
+let dragComponentType = null;
 document.addEventListener("dragstart", (e) => {
   const comp = e.target.closest("[data-drag-component]");
   const fld = e.target.closest("[data-drag-field]");
   const secPreset = e.target.closest("[data-drag-section-preset]");
   const modSection = e.target.closest("[data-drag-module-section]");
-  if (comp) { dragKind = "component"; e.dataTransfer.setData("text/plain", JSON.stringify({ kind: "component", value: comp.dataset.dragComponent })); }
+  if (comp) { dragKind = "component"; dragComponentType = comp.dataset.dragComponent; e.dataTransfer.setData("text/plain", JSON.stringify({ kind: "component", value: comp.dataset.dragComponent })); }
   else if (fld) { dragKind = "field"; e.dataTransfer.setData("text/plain", JSON.stringify({ kind: "field", value: fld.dataset.dragField })); }
   else if (secPreset) { dragKind = "sectionPreset"; e.dataTransfer.setData("text/plain", JSON.stringify({ kind: "sectionPreset", value: secPreset.dataset.dragSectionPreset })); }
   else if (modSection) { dragKind = "moduleSection"; e.dataTransfer.setData("text/plain", JSON.stringify({ kind: "moduleSection", value: modSection.dataset.dragModuleSection })); }
 });
-document.addEventListener("dragend", () => { dragKind = null; });
+document.addEventListener("dragend", () => { dragKind = null; dragComponentType = null; });
 
 // Row/column reorder lists (e.g. static table's Rows & Columns) use their own drag session,
 // tracked separately from `dragKind` above so it doesn't interfere with the insert-panel drags.
@@ -2050,6 +2165,12 @@ document.addEventListener("drop", (e) => {
   const toIndex = Number(row.dataset.reorderIndex);
   if (toIndex !== fromIndex) {
     mutate(() => {
+      if (group === "section-cols") {
+        const sec = findSection(section);
+        const order = computeReorder(sec.columns.length, fromIndex, toIndex);
+        sec.columns = order.map((oi) => sec.columns[oi]);
+        return;
+      }
       const el = findElement(section, column, element);
       if (group === "static-cols") reorderStaticColumns(el, fromIndex, toIndex);
       else if (group === "static-rows") reorderStaticRows(el, fromIndex, toIndex);
@@ -2063,11 +2184,13 @@ document.addEventListener("dragend", () => {
 });
 
 document.addEventListener("dragover", (e) => {
+  // Divider can target either a column (dropped into an existing/new column) or a
+  // section gap (dropped as its own new section), so both zone types are checked.
+  const isDividerDrag = dragKind === "component" && dragComponentType === "divider";
   const isColumnDrag = dragKind === "component" || dragKind === "field";
-  const isSectionDrag = dragKind === "sectionPreset" || dragKind === "moduleSection";
-  const zone = isColumnDrag ? e.target.closest(".dropzone-empty, [data-dropzone-col]")
-    : isSectionDrag ? e.target.closest("[data-dropzone='section']")
-    : null;
+  const isSectionDrag = dragKind === "sectionPreset" || dragKind === "moduleSection" || isDividerDrag;
+  let zone = isColumnDrag ? e.target.closest(".dropzone-empty, [data-dropzone-col]") : null;
+  if (!zone && isSectionDrag) zone = e.target.closest("[data-dropzone='section']");
   if (zone) { e.preventDefault(); zone.classList.add("drag-over"); }
 });
 document.addEventListener("dragleave", (e) => {
@@ -2104,6 +2227,12 @@ document.addEventListener("drop", (e) => {
     const idx = Number(sectionZone.dataset.index);
     const newSec = payload.kind === "sectionPreset" ? makeSectionShape(SECTION_PRESETS.find((p) => p.id === payload.value).widths) : buildModuleSection(payload.value);
     insertSectionAt(idx, newSec);
+    return;
+  }
+  if (sectionZone && payload.kind === "component" && payload.value === "divider") {
+    e.preventDefault();
+    const idx = Number(sectionZone.dataset.index);
+    insertSectionAt(idx, makeSectionShape([100], [[makeElement("divider")]]));
     return;
   }
 });
