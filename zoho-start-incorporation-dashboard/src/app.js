@@ -9,10 +9,7 @@ const STAGE_ORDER = [
   "name_approved",
   "details_incomplete",
   "ready_for_filing",
-  "signing",
   "submitted",
-  "under_review",
-  "changes_requested",
   "incorporated",
 ];
 
@@ -80,9 +77,8 @@ function makeMember() {
 }
 
 // Seed data so the Members screen mirrors the reference design on first view.
-// Step order: 1 Business Details, 2 Members, 3 Share Capital, 4 Documents, 5 Payment, 6 Summary.
 let incorporation = {
-  step: 1,
+  step: 2, // 2 Members, 3 Company Details, 4 Documents, 5 Review & Payment
   activeGroup: "both",
   groupCounts: { both: 3, owners: 1, directors: 0 },
   members: {
@@ -90,14 +86,10 @@ let incorporation = {
     owners: [makeMember()],
     directors: [],
   },
-  companyType: "private", // private | opc | section8
-  office: { sameAsCommAddress: "yes", ownership: "rented", line1: "", line2: "", city: "", state: COMPANY.registrationState, country: "India", pin: "" },
+  office: { sameAsCommAddress: "yes", line1: "", line2: "", city: "", state: COMPANY.registrationState, country: "India", pin: "" },
   business: { desc: COMPANY.businessDesc },
   shareCapital: { authorizedCapital: 100000, shareValue: 10, subscribedCapital: 50000 },
   documents: {},
-  payment: { addOns: { gst: false }, method: "upi" },
-  declarationAccepted: false,
-  summaryCollapsed: {},
 };
 incorporation.members.both[0].hasDin = "yes";
 incorporation.members.both[0].otherCompany = "yes";
@@ -124,12 +116,9 @@ const BASE_ACTIVITY = [
 const STAGE_ACTIVITY = {
   name_approved: { text: "Company name approved by MCA", date: "10 Aug 2026" },
   details_incomplete: { text: "Incorporation details started", date: "10 Aug 2026" },
-  ready_for_filing: { text: "Incorporation information, documents and payment completed", date: "11 Aug 2026" },
-  signing: { text: "Incorporation documents prepared \u2014 awaiting signatures", date: "11 Aug 2026" },
-  submitted: { text: "Incorporation application submitted to MCA", date: "12 Aug 2026" },
-  under_review: { text: "Application picked up for MCA review", date: "12 Aug 2026" },
-  changes_requested: { text: "MCA requested changes \u2014 resubmission needed", date: "13 Aug 2026" },
-  incorporated: { text: "Company incorporated \u2014 CIN issued", date: "14 Aug 2026" },
+  ready_for_filing: { text: "Incorporation details completed \u2014 ready for final review", date: "10 Aug 2026" },
+  submitted: { text: "Incorporation application submitted to MCA", date: "10 Aug 2026" },
+  incorporated: { text: "Company incorporated \u2014 CIN issued", date: "10 Aug 2026" },
 };
 
 const STAGE_CONFIG = {
@@ -167,16 +156,7 @@ const STAGE_CONFIG = {
       title: "Review & pay",
       message: "Your incorporation details are ready. Review everything and pay the final MCA filing amount to submit.",
       extra: `Final filing amount: ${COMPANY.filingFee}`,
-      cta: { label: `Review & Pay ${COMPANY.filingFee}`, next: "signing" },
-    },
-  },
-  signing: {
-    badge: { text: "Action required", tone: "warning" },
-    status: {
-      tone: "warning",
-      title: "Sign & upload documents",
-      message: "Your incorporation documents are ready. The required signatories need to digitally sign them before we can submit your application to MCA.",
-      cta: { label: "Sign & Upload Documents \u2192", action: "goto-view", view: "signing" },
+      cta: { label: `Review & Pay ${COMPANY.filingFee}`, next: "submitted" },
     },
   },
   submitted: {
@@ -185,25 +165,7 @@ const STAGE_CONFIG = {
       tone: "info",
       title: "Application submitted",
       message: "Your incorporation application has been filed with MCA. This typically takes a few business days.",
-      cta: { label: "Simulate: MCA picks up review (demo)", next: "under_review" },
-    },
-  },
-  under_review: {
-    badge: { text: "MCA review", tone: "info" },
-    status: {
-      tone: "info",
-      title: "Your application is under MCA review",
-      message: "MCA is reviewing your incorporation application. We'll notify you as soon as there's an update.",
-      cta: { label: "Simulate: Approved (demo)", next: "incorporated" },
-    },
-  },
-  changes_requested: {
-    badge: { text: "Changes required", tone: "warning" },
-    status: {
-      tone: "warning",
-      title: "Action required",
-      message: "MCA has requested changes to your incorporation application. We've highlighted what needs to be updated.",
-      cta: { label: "Review MCA remarks \u2192", action: "goto-view", view: "resubmission" },
+      cta: { label: "Track application", next: "incorporated" },
     },
   },
   incorporated: {
@@ -217,15 +179,7 @@ const STAGE_CONFIG = {
   },
 };
 
-const VIEW_HASHES = {
-  name_reservation: "#reservation",
-  payment: "#payment",
-  dashboard: "#dashboard",
-  incorporation: "#incorporation",
-  ready: "#ready",
-  signing: "#signing",
-  resubmission: "#resubmission",
-};
+const VIEW_HASHES = { name_reservation: "#reservation", payment: "#payment", dashboard: "#dashboard", incorporation: "#incorporation" };
 
 function viewFromHash() {
   const hash = window.location.hash;
@@ -439,12 +393,11 @@ function mname(field, group, index) {
 
 function renderIncorpTopbar(activeStep) {
   const steps = [
-    { n: 1, label: "Business Details" },
+    { n: 1, label: "Name Reservation" },
     { n: 2, label: "Members" },
-    { n: 3, label: "Share Capital" },
+    { n: 3, label: "Company Details" },
     { n: 4, label: "Documents" },
-    { n: 5, label: "Payment" },
-    { n: 6, label: "Summary" },
+    { n: 5, label: "Review & Payment" },
   ];
   return `
     <header class="wizard-topbar wizard-topbar-grid">
@@ -827,39 +780,20 @@ function getAllShareholders() {
   return list;
 }
 
-const COMPANY_TYPES = [
-  { value: "private", label: "Private Limited Company" },
-  { value: "opc", label: "One Person Company (OPC)" },
-  { value: "section8", label: "Section 8 Company (Non-profit)" },
-];
-
-function renderBusinessDetailsStep() {
+function renderCompanyDetailsStep() {
   const office = incorporation.office;
   const business = incorporation.business;
+  const sc = incorporation.shareCapital;
+  const shares = sc.shareValue > 0 ? Math.floor(sc.subscribedCapital / sc.shareValue) : 0;
+  const holders = getAllShareholders();
 
   return `
-    <h1 class="wizard-title">Business details</h1>
-    <p class="wizard-subtitle">Tell us about your company type and registered office. This decides exactly which documents we'll ask for later.</p>
+    <h1 class="wizard-title">Company details</h1>
+    <p class="wizard-subtitle">A few more details to prepare your incorporation (SPICe+) application.</p>
 
-    <div id="business-details-step">
+    <div id="company-details-step">
       <div class="form-card">
-        <p class="section-label">Company type</p>
-        <div class="type-toggle type-toggle-3">
-          ${COMPANY_TYPES.map(
-            (t) => `<button type="button" class="type-toggle-btn ${incorporation.companyType === t.value ? "is-active" : ""}" data-action="set-company-type" data-value="${t.value}">${t.label}</button>`
-          ).join("")}
-        </div>
-      </div>
-
-      <div class="form-card">
-        <p class="section-label">Business &amp; activity details</p>
-        <div class="prefill-tag">Prefilled from your name reservation</div>
-        <label class="field-label" for="business-desc-2">What will your company do? <span class="req">*</span></label>
-        <textarea class="field-textarea" id="business-desc-2" data-bfield="desc">${business.desc}</textarea>
-      </div>
-
-      <div class="form-card">
-        <p class="section-label">Registered office</p>
+        <p class="section-label">Registered Office Address</p>
         <div class="radio-question">
           <p class="field-label">Is your registered office the same as your business/communication address? <span class="req">*</span></p>
           ${radioYesNo("sameAsCommAddress", office.sameAsCommAddress, "office-same", true, "ofield")}
@@ -885,36 +819,18 @@ function renderBusinessDetailsStep() {
         </div>`
             : `<p class="contact-intro">We'll use your business/communication address as the registered office.</p>`
         }
-        <div class="radio-question">
-          <p class="field-label">Is this address owned by the company/promoters, or rented? <span class="req">*</span> ${infoIcon("This decides whether we ask you for a rent agreement and NOC, or an ownership document.")}</p>
-          <div class="radio-pair">
-            <label><input type="radio" name="office-ownership" data-ofield="ownership" value="owned" ${office.ownership === "owned" ? "checked" : ""} /> Owned</label>
-            <label><input type="radio" name="office-ownership" data-ofield="ownership" value="rented" ${office.ownership === "rented" ? "checked" : ""} /> Rented</label>
-          </div>
-        </div>
       </div>
-    </div>
 
-    <div class="wizard-actions is-split">
-      <button class="btn btn-secondary btn-arrow-left" data-action="incorp-previous">Previous</button>
-      <button class="btn btn-primary btn-arrow" data-action="incorp-continue">Continue</button>
-    </div>`;
-}
-
-/* ---------- Step 3: Share capital ---------- */
-
-function renderShareCapitalStep() {
-  const sc = incorporation.shareCapital;
-  const shares = sc.shareValue > 0 ? Math.floor(sc.subscribedCapital / sc.shareValue) : 0;
-  const holders = getAllShareholders();
-
-  return `
-    <h1 class="wizard-title">Share capital</h1>
-    <p class="wizard-subtitle">Set your authorised and subscribed capital, and how ownership is split between members.</p>
-
-    <div id="share-capital-step">
       <div class="form-card">
-        <p class="section-label">Equity share capital</p>
+        <p class="section-label">Business &amp; Activity Details</p>
+        <div class="prefill-tag">Prefilled from your name reservation</div>
+        <label class="field-label" for="business-desc-2">What will your company do? <span class="req">*</span></label>
+        <textarea class="field-textarea" id="business-desc-2" data-ofield="desc">${business.desc}</textarea>
+      </div>
+
+      <div class="form-card">
+        <p class="section-label">Share Capital</p>
+        <p class="contact-intro">Equity share capital details</p>
         <div class="form-row form-row-3">
           <div><label class="field-label">Authorised Capital (\u20B9) <span class="req">*</span></label><input class="field-input" type="number" data-ofield="authorizedCapital" value="${sc.authorizedCapital}" /></div>
           <div><label class="field-label">Share Value <span class="req">*</span></label><input class="field-input" type="number" data-ofield="shareValue" value="${sc.shareValue}" /></div>
@@ -922,7 +838,7 @@ function renderShareCapitalStep() {
         </div>
         <p class="shares-count">Number of shares: <strong>${shares.toLocaleString("en-IN")}</strong></p>
 
-        <p class="section-label section-label-tight">Shareholders split</p>
+        <p class="section-label section-label-tight">Shareholders Split</p>
         <table class="split-table">
           <thead><tr><th>Member</th><th>Ownership %</th><th>No. of Shares</th><th>Total Value</th></tr></thead>
           <tbody>
@@ -960,285 +876,91 @@ function renderShareCapitalStep() {
 
 /* ---------- Step 4: Documents ---------- */
 
-function getDocState(id) {
-  if (!incorporation.documents[id]) incorporation.documents[id] = { status: "required", fileName: null, size: null, errorType: null };
-  return incorporation.documents[id];
-}
-
-// Builds the conditional document sections based on registered-office ownership, member DIN status,
-// entity type, company type (OPC/Section 8) and nationality \u2014 mirroring the MCA/SPICe+ conditionality.
-function buildDocumentModel() {
-  const office = incorporation.office;
-  const model = { registeredOffice: null, promoters: [], members: [], opc: null, section8: null };
-
-  if (office.ownership === "owned") {
-    model.registeredOffice = {
-      intro: "Documents for your company's registered office.",
-      docs: [
-        { id: "office-address-proof", label: "Proof of registered office address", formats: "PDF, JPG or PNG \u00B7 Max 2 MB" },
-        { id: "office-utility-bill", label: "Utility bill", formats: "PDF, JPG or PNG \u00B7 Max 2 MB" },
-      ],
-    };
-  } else {
-    model.registeredOffice = {
-      intro: "You told us this address is rented. Please upload the documents that confirm you can use this address as the company's registered office.",
-      docs: [
-        { id: "office-rent-agreement", label: "Rent / Lease Agreement", formats: "PDF \u00B7 Max 2 MB" },
-        { id: "office-utility-bill", label: "Utility Bill", formats: "PDF, JPG or PNG \u00B7 Max 2 MB" },
-        {
-          id: "office-noc",
-          label: "No Objection Certificate (NOC)",
-          formats: "PDF \u00B7 Max 2 MB",
-          helper: "The NOC should be from the property owner permitting the use of the premises as the company's registered office.",
-        },
-      ],
-    };
-  }
-
+function computeDocumentList() {
+  const docs = [];
   ["both", "owners", "directors"].forEach((group) => {
     incorporation.members[group].forEach((member, index) => {
-      const key = `${group}-${index}`;
-      const roleLabel = group === "owners" ? "Subscriber" : group === "directors" ? "Director" : "Subscriber cum Director";
+      const label =
+        member.type === "company"
+          ? member.company.legalName || `Member ${index + 1} (Company)`
+          : member.name || `${member.firstName} ${member.lastName}`.trim() || `Member ${index + 1}`;
 
-      if (member.type === "company") {
-        model.promoters.push({
-          key,
-          name: member.company.legalName || "Promoter company",
-          docs: [
-            { id: `promoter-resolution-${key}`, label: "Company resolution", formats: "PDF \u00B7 Max 5 MB" },
-            { id: `promoter-coi-${key}`, label: "Certificate of incorporation", required: false, formats: "PDF \u00B7 Max 5 MB" },
-            { id: `promoter-rep-id-${key}`, label: "Authorised person's identity proof", formats: "PDF, JPG \u00B7 Max 2 MB" },
-            { id: `promoter-rep-address-${key}`, label: "Authorised person's residential proof", formats: "PDF, JPG \u00B7 Max 2 MB" },
-          ],
-        });
-        return;
+      if (member.type === "individual") {
+        docs.push({ id: `pan-${group}-${index}`, name: "PAN Card", why: "Required to verify identity for MCA filing.", who: label, formats: "PDF, JPG \u2014 up to 5 MB" });
+        docs.push({ id: `idproof-${group}-${index}`, name: "Identity & Address Proof (Aadhaar / Passport / Voter ID)", why: "Used to verify identity and current address.", who: label, formats: "PDF, JPG \u2014 up to 5 MB" });
+        docs.push({ id: `photo-${group}-${index}`, name: "Passport-size Photograph", why: "Required for the incorporation application.", who: label, formats: "JPG, PNG \u2014 up to 2 MB" });
+        if (member.hasDin === "no") {
+          docs.push({ id: `din-decl-${group}-${index}`, name: "Declaration for DIN Application", why: "Needed to apply for a new Director Identification Number.", who: label, formats: "PDF \u2014 up to 5 MB" });
+        }
+      } else {
+        docs.push({ id: `coi-${group}-${index}`, name: "Certificate of Incorporation (Member Company)", why: "Confirms the member company's registration with MCA.", who: label, formats: "PDF \u2014 up to 5 MB" });
+        docs.push({ id: `boardres-${group}-${index}`, name: "Board Resolution Authorising Representative", why: "Authorises the named representative to act on the company's behalf.", who: label, formats: "PDF \u2014 up to 5 MB" });
       }
-
-      const name = member.name || `${member.firstName} ${member.lastName}`.trim() || `Member ${index + 1}`;
-      const isForeign = member.hasDin === "no" && member.nationality && member.nationality !== "Indian";
-      const entry = { key, name, role: roleLabel, hasDin: member.hasDin, isForeign, docs: [], interestDocs: [] };
-
-      if (member.hasDin === "no" && !isForeign) {
-        entry.docs.push({ id: `member-id-${key}`, label: "Proof of Identity", helper: "Required because this member does not have a DIN.", formats: "PDF, JPG \u00B7 Max 2 MB" });
-        entry.docs.push({ id: `member-address-${key}`, label: "Proof of Residential Address", helper: "Required because this member does not have a DIN.", formats: "PDF, JPG \u00B7 Max 2 MB" });
-      }
-
-      if (member.otherCompany === "yes") {
-        entry.interestDocs.push({
-          id: `member-interest-${key}`,
-          label: "Interest in other entities",
-          helper: "This helps us disclose the first directors' interests as required for incorporation.",
-          formats: "PDF \u00B7 Max 2 MB",
-        });
-      }
-
-      model.members.push(entry);
     });
   });
 
-  if (incorporation.companyType === "opc") {
-    model.opc = {
-      docs: [
-        { id: "opc-nominee-consent", label: "Nominee consent", formats: "PDF \u00B7 Max 2 MB" },
-        { id: "opc-nominee-id", label: "Nominee identity proof", formats: "PDF, JPG \u00B7 Max 2 MB" },
-        { id: "opc-nominee-address", label: "Nominee residential proof", formats: "PDF, JPG \u00B7 Max 2 MB" },
-      ],
-    };
-  }
+  docs.push({ id: "office-address-proof", name: "Registered Office Address Proof", why: "Utility bill or rent agreement confirming your registered office.", who: "Company", formats: "PDF, JPG \u2014 up to 5 MB" });
+  docs.push({ id: "noc", name: "No Objection Certificate (NOC) from Owner", why: "Required only if the registered office is rented or not owned by the company.", who: "Company", formats: "PDF \u2014 up to 5 MB" });
+  docs.push({ id: "inc9", name: "INC-9 Declaration", why: "Declaration by first subscribers and directors, prepared for you to sign.", who: "All members", formats: "PDF \u2014 up to 5 MB" });
+  docs.push({ id: "moa", name: "Memorandum of Association (MOA)", why: "Auto-generated by Zoho Start based on your company details.", who: "Zoho Start", formats: "Auto-prepared", notRequired: true });
+  docs.push({ id: "aoa", name: "Articles of Association (AOA)", why: "Auto-generated by Zoho Start based on your company details.", who: "Zoho Start", formats: "Auto-prepared", notRequired: true });
 
-  if (incorporation.companyType === "section8") {
-    model.section8 = {
-      docs: [
-        { id: "sec8-inc14", label: "Declaration \u2013 INC-14", formats: "PDF \u00B7 Max 2 MB" },
-        { id: "sec8-inc15", label: "Declaration \u2013 INC-15", formats: "PDF \u00B7 Max 2 MB" },
-        { id: "sec8-projection", label: "Estimated income & expenditure for the next 3 years", formats: "PDF, XLS \u00B7 Max 2 MB" },
-      ],
-    };
-  }
-
-  return model;
+  return docs;
 }
 
-function allDocsFromModel(model) {
-  const all = [...model.registeredOffice.docs];
-  model.promoters.forEach((p) => all.push(...p.docs));
-  model.members.forEach((m) => {
-    if (!m.isForeign) {
-      all.push(...m.docs);
-      all.push(...m.interestDocs);
-    }
-  });
-  if (model.opc) all.push(...model.opc.docs);
-  if (model.section8) all.push(...model.section8.docs);
-  return all;
+function getDocState(doc) {
+  if (!incorporation.documents[doc.id]) {
+    incorporation.documents[doc.id] = { status: doc.notRequired ? "not_required" : "required", fileName: null };
+  }
+  return incorporation.documents[doc.id];
 }
 
-function computeDocProgress(model) {
-  const all = allDocsFromModel(model);
-  const required = all.filter((d) => d.required !== false);
-  const uploaded = required.filter((d) => getDocState(d.id).status === "uploaded");
-  return { total: required.length, uploaded: uploaded.length, missing: required.filter((d) => getDocState(d.id).status !== "uploaded") };
-}
+function renderDocCard(doc) {
+  const state = getDocState(doc);
+  const statusLabel = { required: "Required", uploaded: "Uploaded", under_review: "Under review", not_required: "Not required" }[state.status];
+  const statusTone = { required: "warning", uploaded: "success", under_review: "info", not_required: "info" }[state.status];
+  const actions =
+    doc.notRequired
+      ? ""
+      : state.status === "uploaded" || state.status === "under_review"
+      ? `
+        <button type="button" class="btn btn-secondary btn-sm" data-action="doc-preview" data-doc="${doc.id}">Preview</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-action="doc-replace" data-doc="${doc.id}">Replace</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-action="doc-remove" data-doc="${doc.id}">Remove</button>`
+      : `<button type="button" class="btn btn-primary btn-sm" data-action="doc-upload" data-doc="${doc.id}">Upload</button>`;
 
-function renderUploadBox(id, formats) {
-  const state = getDocState(id);
-  if (state.status === "error") {
-    const messages = {
-      too_large: ["This file is too large.", "Upload a file smaller than 2 MB."],
-      unsupported: ["This file type isn't supported.", "Upload a PDF, JPG or PNG."],
-      failed: ["We couldn't upload this file.", "Please try again."],
-      unreadable: ["We couldn't read this document.", "Upload a clear, complete copy."],
-    };
-    const [title, sub] = messages[state.errorType] || messages.failed;
-    return `
-      <div class="upload-box upload-box-error">
-        <p class="upload-error-title">${title}</p>
-        <p class="upload-error-sub">${sub}</p>
-        <button type="button" class="btn btn-primary btn-sm" data-action="doc-upload" data-doc="${id}">Try again</button>
-      </div>`;
-  }
-  if (state.status === "uploaded") {
-    return `
-      <div class="upload-box upload-box-filled">
-        <span class="upload-file-icon" aria-hidden="true">PDF</span>
-        <div class="upload-file-meta">
-          <p class="upload-file-name">${state.fileName}</p>
-          <p class="upload-file-size">${state.size}</p>
-        </div>
-        <div class="upload-box-actions">
-          <button type="button" class="link-btn" data-action="doc-view" data-doc="${id}">View</button>
-          <button type="button" class="link-btn" data-action="doc-replace" data-doc="${id}">Replace</button>
-          <button type="button" class="link-btn link-btn-danger" data-action="doc-remove" data-doc="${id}">Remove</button>
-        </div>
-      </div>`;
-  }
   return `
-    <div class="upload-box">
-      <button type="button" class="upload-box-btn" data-action="doc-upload" data-doc="${id}">
-        <span class="upload-arrow" aria-hidden="true">\u2191</span> Upload document
-      </button>
-      <p class="upload-box-hint">${formats || "PDF, JPG or PNG \u00B7 Max 2 MB"}</p>
-      <button type="button" class="upload-demo-error-link" data-action="doc-simulate-error" data-doc="${id}">Simulate an upload issue (demo)</button>
+    <div class="doc-card">
+      <div class="doc-card-top">
+        <p class="doc-card-title">${doc.name}</p>
+        <span class="badge badge-${statusTone}">${statusLabel}</span>
+      </div>
+      <p class="doc-card-why">${doc.why}</p>
+      <p class="doc-card-meta">Provided by: <strong>${doc.who}</strong> &middot; ${doc.formats}</p>
+      ${state.fileName ? `<p class="doc-card-file">\uD83D\uDCCE ${state.fileName}</p>` : ""}
+      <div class="doc-card-actions">${actions}</div>
     </div>`;
 }
 
-function renderDocField(doc) {
-  return `
-    <div class="doc-field">
-      <p class="doc-field-label">${doc.label}${doc.required === false ? ' <span class="opt">(Optional)</span>' : ' <span class="req">*</span>'}${doc.helper ? infoIcon(doc.helper) : ""}</p>
-      ${renderUploadBox(doc.id, doc.formats)}
-    </div>`;
-}
-
-function renderMemberDocCard(m) {
-  if (m.isForeign) {
-    return `
-      <div class="member-doc-card">
-        <p class="member-doc-name">${m.name}</p>
-        <p class="member-doc-role">${m.role}</p>
-        <div class="foreign-support-card">
-          <p class="foreign-support-title">Foreign participant detected</p>
-          <p class="foreign-support-text">We currently support incorporation with Indian participants through this flow. Our incorporation team can help you with the additional documents and verification required for foreign participants.</p>
-          <button type="button" class="btn btn-secondary btn-sm" data-action="contact-support">Contact Support</button>
-        </div>
-      </div>`;
-  }
-  const noDocsNeeded = m.hasDin === "yes";
-  return `
-    <div class="member-doc-card">
-      <p class="member-doc-name">${m.name}</p>
-      <p class="member-doc-role">${m.role}${m.hasDin === "yes" ? " \u00B7 DIN available" : ""}</p>
-      ${
-        noDocsNeeded
-          ? `<p class="doc-not-needed">\u2713 No additional identity documents required</p>`
-          : `<div class="doc-field-grid">${m.docs.map(renderDocField).join("")}</div>`
-      }
-      ${m.interestDocs.length ? `<div class="doc-field-grid doc-field-grid-interest">${m.interestDocs.map(renderDocField).join("")}</div>` : ""}
-    </div>`;
+function allRequiredDocsUploaded(docs) {
+  return docs.every((doc) => getDocState(doc).status !== "required");
 }
 
 function renderDocumentsStep() {
-  const model = buildDocumentModel();
-  const progress = computeDocProgress(model);
-  const pct = progress.total ? Math.round((progress.uploaded / progress.total) * 100) : 100;
-
+  const docs = computeDocumentList();
   return `
-    <h1 class="wizard-title">Upload your documents</h1>
-    <p class="wizard-subtitle">Upload the documents we need to prepare and file your incorporation application.</p>
-
-    <div class="doc-progress-row">
-      <span class="doc-progress-label">Documents</span>
-      <span class="doc-progress-count">${progress.uploaded} / ${progress.total} complete</span>
+    <h1 class="wizard-title">Let's collect your documents</h1>
+    <p class="wizard-subtitle">Upload the documents required to prepare and submit your incorporation application.</p>
+    <div class="info-box doc-info-banner">
+      <span aria-hidden="true">\u24D8</span>
+      We'll tell you if any additional documents are needed.
     </div>
-    <div class="doc-progress-bar"><div class="doc-progress-fill" style="width:${pct}%"></div></div>
-
-    <div id="documents-step">
-      <section class="doc-section">
-        <p class="doc-section-eyebrow">Registered office</p>
-        <p class="doc-section-subtitle">${model.registeredOffice.intro}</p>
-        <div class="doc-field-grid">${model.registeredOffice.docs.map(renderDocField).join("")}</div>
-      </section>
-
-      ${model.promoters
-        .map(
-          (p) => `
-      <section class="doc-section">
-        <p class="doc-section-eyebrow">Promoter company</p>
-        <p class="doc-section-subtitle">Documents for the company subscribing to your new company.</p>
-        <p class="doc-subsection-name">${p.name}</p>
-        <div class="doc-field-grid">${p.docs.map(renderDocField).join("")}</div>
-      </section>`
-        )
-        .join("")}
-
-      <section class="doc-section">
-        <p class="doc-section-eyebrow">Member documents</p>
-        <p class="doc-section-subtitle">We only ask for documents required for each member.</p>
-        ${model.members.map((m) => renderMemberDocCard(m)).join("")}
-      </section>
-
-      ${
-        model.opc
-          ? `
-      <section class="doc-section">
-        <p class="doc-section-eyebrow">Nominee documents</p>
-        <p class="doc-section-subtitle">Required for a One Person Company (OPC).</p>
-        <div class="doc-field-grid">${model.opc.docs.map(renderDocField).join("")}</div>
-      </section>`
-          : ""
-      }
-
-      ${
-        model.section8
-          ? `
-      <section class="doc-section">
-        <p class="doc-section-eyebrow">Section 8 documents</p>
-        <p class="doc-section-subtitle">Additional declarations required for a Section 8 (non-profit) company.</p>
-        <div class="doc-field-grid">${model.section8.docs.map(renderDocField).join("")}</div>
-      </section>`
-          : ""
-      }
-
-      <section class="doc-section doc-section-prepared">
-        <p class="doc-section-eyebrow">Documents we'll prepare</p>
-        <p class="doc-section-subtitle">We'll prepare the incorporation forms and documents based on the information you've provided.</p>
-        <ul class="prepared-doc-list">
-          <li>Memorandum of Association</li>
-          <li>Articles of Association</li>
-          <li>Incorporation forms</li>
-          <li>Applicable declarations</li>
-        </ul>
-        <p class="doc-section-footnote">You'll be asked to digitally sign the applicable documents before we submit them.</p>
-      </section>
+    <div class="doc-grid">
+      ${docs.map((doc) => renderDocCard(doc)).join("")}
     </div>
-
-    <div id="docs-missing-note"></div>
     <div class="wizard-actions is-split">
       <button class="btn btn-secondary btn-arrow-left" data-action="incorp-previous">Previous</button>
-      <div class="wizard-actions-right">
-        <button class="btn btn-secondary" data-action="save-exit">Save &amp; Exit</button>
-        <button class="btn btn-primary btn-arrow" data-action="incorp-continue">Continue</button>
-      </div>
+      <button class="btn btn-primary btn-arrow" data-action="incorp-continue" ${allRequiredDocsUploaded(docs) ? "" : "disabled"}>Continue</button>
     </div>`;
 }
 
@@ -1247,181 +969,92 @@ function renderDocumentsStep() {
 function computeIncorpPaymentTotals() {
   const govFee = 6499;
   const serviceFee = 1499;
-  const stampDuty = 1500;
-  const addOnsTotal = incorporation.payment.addOns.gst ? 1499 : 0;
-  const gst = Math.round((serviceFee + addOnsTotal) * 0.18);
-  const total = govFee + serviceFee + stampDuty + addOnsTotal + gst;
-  return { govFee, serviceFee, stampDuty, addOnsTotal, gst, total };
+  const gst = Math.round(serviceFee * 0.18);
+  const total = govFee + serviceFee + gst;
+  return { govFee, serviceFee, gst, total };
 }
 
-/* ---------- Step 5: Payment ---------- */
-
-function renderIncorpPaymentStep() {
-  const { govFee, serviceFee, stampDuty, addOnsTotal, gst, total } = computeIncorpPaymentTotals();
-  const companyTypeLabel = COMPANY_TYPES.find((t) => t.value === incorporation.companyType).label;
-
-  return `
-    <h1 class="wizard-title">Payment</h1>
-    <p class="wizard-subtitle">Review the incorporation fees and make your payment.</p>
-
-    <div id="payment-step">
-      <div class="payment-grid">
-        <div class="pay-card">
-          <p class="section-label">What you're paying for</p>
-          <ul class="paying-for-list">
-            <li><span class="paying-for-check">\u2713</span> Company incorporation service</li>
-            <li><span class="paying-for-check">\u2713</span> Government filing fees</li>
-            <li><span class="paying-for-check">\u2713</span> Applicable state stamp duty</li>
-            ${incorporation.payment.addOns.gst ? `<li><span class="paying-for-check">\u2713</span> Selected additional services</li>` : ""}
-          </ul>
-          <hr class="form-divider" style="margin: 16px 0;" />
-          <p class="section-label">Your incorporation</p>
-          <dl>
-            <div class="name-pref-row"><dt>Company name</dt><dd>${companyDisplayName()}</dd></div>
-            <div class="name-pref-row"><dt>Company type</dt><dd>${companyTypeLabel}</dd></div>
-            <div class="name-pref-row"><dt>State</dt><dd>${COMPANY.registrationState}</dd></div>
-          </dl>
-          <hr class="form-divider" style="margin: 16px 0;" />
-          <p class="section-label">Additional services</p>
-          <label class="checkbox-row addon-row">
-            <input type="checkbox" id="addon-gst" ${incorporation.payment.addOns.gst ? "checked" : ""} />
-            GST Registration
-            <span class="addon-price">\u20B91,499</span>
-          </label>
-        </div>
-
-        <div class="summary-card-dark">
-          <h4>Summary</h4>
-          <p class="summary-loc">\uD83D\uDCCD ${COMPANY.registrationState}</p>
-          <div class="summary-row"><span>Zoho Start service fee</span><span>\u20B9${serviceFee.toLocaleString("en-IN")}</span></div>
-          <div class="summary-row"><span>Government filing fee</span><span>\u20B9${govFee.toLocaleString("en-IN")}</span></div>
-          <div class="summary-row"><span>Stamp duty</span><span>\u20B9${stampDuty.toLocaleString("en-IN")}</span></div>
-          ${addOnsTotal ? `<div class="summary-row"><span>GST Registration</span><span>\u20B9${addOnsTotal.toLocaleString("en-IN")}</span></div>` : ""}
-          <div class="summary-row"><span>GST (18%)</span><span>\u20B9${gst.toLocaleString("en-IN")}</span></div>
-          <hr class="summary-divider" />
-          <div class="summary-total"><span>Total payable</span><span class="summary-total-value">\u20B9${total.toLocaleString("en-IN")}</span></div>
-        </div>
-      </div>
-
-      <div class="form-card">
-        <p class="section-label">Payment method</p>
-        <div class="payment-method-list">
-          ${["upi", "card", "netbanking"]
-            .map((m) => {
-              const labels = { upi: "UPI", card: "Credit / Debit Card", netbanking: "Net Banking" };
-              return `<label class="payment-method-option ${incorporation.payment.method === m ? "is-selected" : ""}"><input type="radio" name="pay-method" value="${m}" ${incorporation.payment.method === m ? "checked" : ""} /> ${labels[m]}</label>`;
-            })
-            .join("")}
-        </div>
-      </div>
-    </div>
-
-    <div id="payment-status-note"></div>
-    <div class="wizard-actions is-split">
-      <button class="btn btn-secondary btn-arrow-left" data-action="incorp-previous">Previous</button>
-      <button class="btn btn-primary" data-action="incorp-pay" id="incorp-pay-btn">Pay \u20B9${total.toLocaleString("en-IN")}</button>
-    </div>`;
-}
-
-/* ---------- Step 6: Summary ---------- */
-
-function renderCollapsibleCard(key, title, bodyHtml, editHtml) {
-  const isOpen = !incorporation.summaryCollapsed[key];
-  return `
-    <div class="summary-collapse-card">
-      <div class="summary-collapse-head">
-        <button type="button" class="summary-collapse-toggle" data-action="toggle-summary-card" data-card="${key}">
-          <span class="summary-collapse-chevron ${isOpen ? "is-open" : ""}" aria-hidden="true">\u25BE</span>
-          <span class="summary-collapse-title">${title}</span>
-        </button>
-        ${editHtml || ""}
-      </div>
-      ${isOpen ? `<div class="summary-collapse-body">${bodyHtml}</div>` : ""}
-    </div>`;
-}
-
-function renderSummaryStep() {
+function renderReviewPaymentStep() {
+  const { govFee, serviceFee, gst, total } = computeIncorpPaymentTotals();
   const allMembers = [...incorporation.members.both, ...incorporation.members.owners, ...incorporation.members.directors];
-  const model = buildDocumentModel();
-  const progress = computeDocProgress(model);
-  const { total } = computeIncorpPaymentTotals();
-  const allDocsDone = progress.uploaded >= progress.total;
-
-  const companyBody = `
-    <div class="review-row"><span>Company name</span><strong>${companyDisplayName()}</strong></div>
-    <div class="review-row"><span>Company type</span><strong>${COMPANY_TYPES.find((t) => t.value === incorporation.companyType).label}</strong></div>
-    <div class="review-row"><span>Registration state</span><strong>${COMPANY.registrationState}</strong></div>
-    <div class="review-row"><span>Registered office</span><strong>${
-      incorporation.office.sameAsCommAddress === "no" ? `${incorporation.office.line1}, ${incorporation.office.city}, ${incorporation.office.state}` : "Same as business/communication address"
-    }</strong></div>`;
-
-  const membersBody = allMembers
-    .map((m, i) => {
-      const name = m.type === "company" ? m.company.legalName || "Company member" : m.name || `${m.firstName} ${m.lastName}`.trim() || `Member ${i + 1}`;
-      const pct = m.ownershipPercent || 0;
-      return `<div class="review-row"><span>${name}</span><strong>${pct}% ownership</strong></div>`;
-    })
-    .join("");
-
-  const sc = incorporation.shareCapital;
-  const shareCapitalBody = `
-    <div class="review-row"><span>Authorised capital</span><strong>\u20B9${sc.authorizedCapital.toLocaleString("en-IN")}</strong></div>
-    <div class="review-row"><span>Subscribed capital</span><strong>\u20B9${sc.subscribedCapital.toLocaleString("en-IN")}</strong></div>
-    <div class="review-row"><span>Face value per share</span><strong>\u20B9${sc.shareValue}</strong></div>`;
-
-  const documentsBody = `
-    <div class="review-row"><span>${allDocsDone ? "All required documents uploaded" : "Documents uploaded"}</span><strong>${progress.uploaded} / ${progress.total} complete</strong></div>`;
-
-  const paymentBody = `<div class="review-row"><span>Total paid</span><strong>\u20B9${total.toLocaleString("en-IN")}</strong></div>`;
-
-  const editLink = (step) => `<button type="button" class="edit-link" data-action="incorp-edit" data-step="${step}">Edit</button>`;
-  const viewLink = (step) => `<button type="button" class="edit-link" data-action="incorp-edit" data-step="${step}">View</button>`;
+  const docs = computeDocumentList();
+  const uploadedCount = docs.filter((d) => getDocState(d).status === "uploaded").length;
+  const requiredCount = docs.filter((d) => !d.notRequired).length;
 
   return `
-    <h1 class="wizard-title">Review your incorporation details</h1>
-    <p class="wizard-subtitle">Check your details before we prepare your incorporation application.</p>
+    <h1 class="wizard-title">Review &amp; payment</h1>
+    <p class="wizard-subtitle">Check everything below before we submit your incorporation application to MCA.</p>
 
-    <div id="summary-step">
-      ${renderCollapsibleCard("company", "Company details", companyBody, editLink(1))}
-      ${renderCollapsibleCard("members", `Members (${allMembers.length})`, membersBody, editLink(2))}
-      ${renderCollapsibleCard("capital", "Share capital", shareCapitalBody, editLink(3))}
-      ${renderCollapsibleCard("documents", "Documents", documentsBody, viewLink(4))}
-      ${renderCollapsibleCard("payment", "Payment", paymentBody, viewLink(5))}
+    <div class="review-card">
+      <div class="review-card-head"><p class="section-label">Company</p></div>
+      <div class="review-row"><span>Company name</span><strong>${companyDisplayName()}</strong></div>
+      <div class="review-row"><span>Registration state</span><strong>${COMPANY.registrationState}</strong></div>
+      <div class="review-row"><span>Company type</span><strong>Private Limited</strong></div>
+      <p class="review-locked-note">Approved by MCA \u2014 name and state can't be changed at this stage.</p>
+    </div>
 
-      <div class="readiness-banner">
-        <p class="readiness-title">\u2713 You're ready to proceed</p>
-        <p class="readiness-text">Your company details and required documents are complete. We'll prepare your incorporation application using these details.</p>
+    <div class="review-card">
+      <div class="review-card-head"><p class="section-label">Members (${allMembers.length})</p><button type="button" class="edit-link" data-action="incorp-edit" data-step="2">Edit</button></div>
+      ${allMembers
+        .map((m, i) => {
+          const name = m.type === "company" ? m.company.legalName || "Company member" : m.name || `${m.firstName} ${m.lastName}`.trim() || `Member ${i + 1}`;
+          return `<div class="review-row"><span>${name}</span><strong>${m.type === "company" ? "Company" : "Individual"}</strong></div>`;
+        })
+        .join("")}
+    </div>
+
+    <div class="review-card">
+      <div class="review-card-head"><p class="section-label">Registered Office</p><button type="button" class="edit-link" data-action="incorp-edit" data-step="3">Edit</button></div>
+      <div class="review-row"><span>Address</span><strong>${
+        incorporation.office.sameAsCommAddress === "no"
+          ? `${incorporation.office.line1}, ${incorporation.office.city}, ${incorporation.office.state}`
+          : "Same as business/communication address"
+      }</strong></div>
+    </div>
+
+    <div class="review-card">
+      <div class="review-card-head"><p class="section-label">Share Capital</p><button type="button" class="edit-link" data-action="incorp-edit" data-step="3">Edit</button></div>
+      <div class="review-row"><span>Authorised capital</span><strong>\u20B9${incorporation.shareCapital.authorizedCapital.toLocaleString("en-IN")}</strong></div>
+      <div class="review-row"><span>Subscribed capital</span><strong>\u20B9${incorporation.shareCapital.subscribedCapital.toLocaleString("en-IN")}</strong></div>
+    </div>
+
+    <div class="review-card">
+      <div class="review-card-head"><p class="section-label">Documents</p><button type="button" class="edit-link" data-action="incorp-edit" data-step="4">Edit</button></div>
+      <div class="review-row"><span>Uploaded</span><strong>${uploadedCount} of ${requiredCount}</strong></div>
+    </div>
+
+    <div class="payment-grid payment-grid-single">
+      <div class="summary-card-dark">
+        <h4>Payment Summary</h4>
+        <div class="summary-row"><span>MCA / Government filing fee</span><span>\u20B9${govFee.toLocaleString("en-IN")}</span></div>
+        <div class="summary-row"><span>Zoho Start service fee</span><span>\u20B9${serviceFee.toLocaleString("en-IN")}</span></div>
+        <div class="summary-row"><span>GST (18% on service fee)</span><span>\u20B9${gst.toLocaleString("en-IN")}</span></div>
+        <hr class="summary-divider" />
+        <div class="summary-total"><span>Total Payable</span><span class="summary-total-value">\u20B9${total.toLocaleString("en-IN")}</span></div>
       </div>
+    </div>
+    <p class="contact-intro">This is the final incorporation payment. We'll submit your incorporation application to MCA only after this payment is received.</p>
 
-      <div class="declaration-card">
-        <label class="declaration-check">
-          <input type="checkbox" id="declaration-checkbox" ${incorporation.declarationAccepted ? "checked" : ""} />
-          <span>I confirm that the information provided is accurate and complete, and I authorize Zoho Business Services to prepare and submit the incorporation application on my behalf.</span>
-        </label>
-        <button type="button" class="link-btn" data-action="toggle-declaration-text">View full declaration</button>
-        <div class="declaration-full" id="declaration-full" hidden>
-          I, the undersigned, hereby declare that all particulars furnished in this incorporation application, including the information relating to members, directors, registered office and share capital, are true and correct to the best of my knowledge, and I authorise Zoho Business Services and its representatives to prepare, digitally file and follow up on this incorporation application with the Ministry of Corporate Affairs (MCA) on my behalf.
-        </div>
-      </div>
+    <div class="after-pay-card">
+      <p class="section-label">What happens next?</p>
+      <ul class="after-pay-list">
+        <li><span class="after-pay-num">1</span> We'll review your details and documents.</li>
+        <li><span class="after-pay-num">2</span> We'll prepare the incorporation forms.</li>
+        <li><span class="after-pay-num">3</span> You'll pay the applicable filing and government charges.</li>
+        <li><span class="after-pay-num">4</span> We'll submit your application to MCA and keep you updated on its status.</li>
+      </ul>
     </div>
 
     <div class="wizard-actions is-split">
       <button class="btn btn-secondary btn-arrow-left" data-action="incorp-previous">Previous</button>
-      <button class="btn btn-primary btn-arrow" data-action="submit-for-incorporation" ${incorporation.declarationAccepted ? "" : "disabled"}>Submit for Incorporation</button>
+      <button class="btn btn-primary btn-arrow" data-action="incorp-pay">Pay \u20B9${total.toLocaleString("en-IN")}</button>
     </div>`;
 }
 
 /* ---------- Wizard shell ---------- */
 
 function renderIncorporationView() {
-  const stepRenderers = {
-    1: renderBusinessDetailsStep,
-    2: renderMembersStep,
-    3: renderShareCapitalStep,
-    4: renderDocumentsStep,
-    5: renderIncorpPaymentStep,
-    6: renderSummaryStep,
-  };
+  const stepRenderers = { 2: renderMembersStep, 3: renderCompanyDetailsStep, 4: renderDocumentsStep, 5: renderReviewPaymentStep };
   const content = stepRenderers[incorporation.step]();
   return `
     <div class="wizard-shell">
@@ -1430,246 +1063,6 @@ function renderIncorporationView() {
         <div class="wizard-container wizard-container-wide">
           ${content}
         </div>
-      </div>
-    </div>`;
-}
-
-/* ===================== Post-summary: "Your application is ready" ===================== */
-
-function renderReadyView() {
-  return `
-    <div class="wizard-shell">
-      <div class="wizard-page">
-        <div class="wizard-container">
-          <h1 class="wizard-title">Your application is ready</h1>
-          <p class="wizard-subtitle">We've received your information and payment. Next, we'll prepare your incorporation documents. Some documents will need to be digitally signed before we can submit your application to MCA.</p>
-
-          <div class="form-card">
-            <p class="section-label">What happens next</p>
-            <ul class="sub-status-list">
-              <li class="sub-status-item is-done"><span class="sub-status-icon">\u2713</span><span class="sub-status-text">Your information is validated</span></li>
-              <li class="sub-status-item is-current"><span class="sub-status-icon">\u25CF</span><span class="sub-status-text">Sign and upload required documents</span></li>
-              <li class="sub-status-item is-upcoming"><span class="sub-status-icon">\u25CB</span><span class="sub-status-text">Application submitted to MCA</span></li>
-              <li class="sub-status-item is-upcoming"><span class="sub-status-icon">\u25CB</span><span class="sub-status-text">MCA review</span></li>
-              <li class="sub-status-item is-upcoming"><span class="sub-status-icon">\u25CB</span><span class="sub-status-text">Company incorporated</span></li>
-            </ul>
-          </div>
-
-          <div class="wizard-actions ready-actions">
-            <button class="btn btn-primary btn-arrow" data-action="goto-view" data-view="signing">Continue to document signing</button>
-            <button class="btn btn-secondary" data-action="goto-view" data-view="dashboard">Go to Dashboard</button>
-          </div>
-        </div>
-      </div>
-    </div>`;
-}
-
-/* ===================== Sign & Upload Documents ===================== */
-
-// Lazily builds one signer per individual member with two documents to sign (MoA / AoA).
-function ensureSigningModel() {
-  if (incorporation.signing) return incorporation.signing;
-  const people = [];
-  ["both", "owners", "directors"].forEach((group) => {
-    incorporation.members[group].forEach((member, index) => {
-      if (member.type === "company") return;
-      const name = member.name || `${member.firstName} ${member.lastName}`.trim() || `Member ${index + 1}`;
-      const role = group === "owners" ? "Subscriber" : group === "directors" ? "Director" : "Subscriber cum Director";
-      people.push({
-        key: `${group}-${index}`,
-        name,
-        role,
-        docs: [
-          { id: `sig-moa-${group}-${index}`, name: "Memorandum of Association", formNo: "INC-33", status: "not_signed", errorType: null },
-          { id: `sig-aoa-${group}-${index}`, name: "Articles of Association", formNo: "INC-34", status: "not_signed", errorType: null },
-        ],
-      });
-    });
-  });
-  incorporation.signing = { people, expanded: {} };
-  return incorporation.signing;
-}
-
-function signingProgress(signing) {
-  const allDocs = signing.people.flatMap((p) => p.docs);
-  const total = allDocs.length;
-  const done = allDocs.filter((d) => d.status === "verified").length;
-  return { total, done };
-}
-
-const SIGN_ERROR_COPY = {
-  mismatch: (name) => ["Signature doesn't match", `This document was signed using a DSC that doesn't match ${name}. Please sign using ${name}'s DSC and upload again.`],
-  expired: () => ["Your DSC has expired", "The digital signature used for this document is no longer valid. Please use a valid DSC and upload the signed document again."],
-  modified: () => ["This document was changed after it was signed.", "Download the latest version, sign it again, and upload the new signed copy."],
-  wrong: () => ["This isn't the document we requested.", "Please download the latest document from this page, sign it, and upload the signed copy."],
-  old: () => ["This document is out of date.", "We've generated a newer version after your details were updated."],
-};
-
-function renderSignDocRow(person, doc) {
-  const badge = {
-    not_signed: { text: "Not signed", tone: "muted" },
-    ready_to_sign: { text: "Ready to sign", tone: "info" },
-    checking: { text: "Checking signature\u2026", tone: "info" },
-    verified: { text: "\u2713 Signature verified", tone: "success" },
-    error: { text: "! Signature needs attention", tone: "danger" },
-  }[doc.status];
-
-  let extra = "";
-  if (doc.status === "verified") {
-    extra = `<p class="sign-doc-detail">Signed by ${person.name} \u00B7 DSC matched successfully</p>`;
-  } else if (doc.status === "error") {
-    const [title, sub] = (SIGN_ERROR_COPY[doc.errorType] || SIGN_ERROR_COPY.mismatch)(person.name);
-    extra = `<p class="sign-doc-error-title">${title}</p><p class="sign-doc-error-sub">${sub}</p>`;
-  }
-
-  const canUpload = doc.status === "ready_to_sign" || doc.status === "error";
-  const isBusy = doc.status === "checking";
-
-  return `
-    <div class="sign-doc-row">
-      <div class="sign-doc-info">
-        <p class="sign-doc-name">${doc.name}</p>
-        <p class="sign-doc-form">${doc.formNo}</p>
-        <span class="badge badge-${badge.tone}">${badge.text}</span>
-        ${extra}
-      </div>
-      <div class="sign-doc-actions">
-        <button type="button" class="btn btn-secondary btn-sm" data-action="sign-download" data-person="${person.key}" data-doc="${doc.id}" ${isBusy ? "disabled" : ""}>Download</button>
-        <button type="button" class="btn btn-primary btn-sm" data-action="sign-upload" data-person="${person.key}" data-doc="${doc.id}" ${canUpload && !isBusy ? "" : "disabled"}>Upload signed</button>
-      </div>
-      ${
-        canUpload
-          ? `<div class="sign-demo-picker">
-              <label class="sign-demo-label">Simulate result (demo)</label>
-              <select class="field-select sign-demo-select" data-person="${person.key}" data-doc="${doc.id}">
-                <option value="verified">Signature verified</option>
-                <option value="mismatch">DSC doesn't match signer</option>
-                <option value="expired">DSC expired</option>
-                <option value="modified">Document modified after signing</option>
-                <option value="wrong">Wrong document uploaded</option>
-                <option value="old">Old version uploaded</option>
-              </select>
-            </div>`
-          : ""
-      }
-    </div>`;
-}
-
-function renderSignerCard(p) {
-  const doneCount = p.docs.filter((d) => d.status === "verified").length;
-  const isExpanded = incorporation.signing.expanded[p.key] !== false;
-  return `
-    <div class="signer-card">
-      <button type="button" class="signer-card-head" data-action="toggle-signer" data-key="${p.key}">
-        <div>
-          <p class="signer-name">${p.name}</p>
-          <p class="signer-role">${p.role}</p>
-        </div>
-        <span class="signer-status ${doneCount === p.docs.length ? "is-done" : "is-pending"}">${doneCount === p.docs.length ? "\u2713" : "\u25CF"} ${doneCount} of ${p.docs.length} documents signed</span>
-      </button>
-      ${isExpanded ? `<div class="signer-card-body">${p.docs.map((d) => renderSignDocRow(p, d)).join("")}</div>` : ""}
-    </div>`;
-}
-
-function renderAppShellNav(activeLabel) {
-  return `
-    <aside class="sidebar">
-      <div class="brand-row"><span class="brand-mark" aria-hidden="true">&#9650;</span><span class="brand-name">Start</span></div>
-      <nav class="sidebar-nav" aria-label="Primary">
-        <button class="nav-link ${activeLabel === "Dashboard" ? "active" : ""}" data-action="goto-view" data-view="dashboard">Dashboard</button>
-        <button class="nav-link ${activeLabel !== "Dashboard" ? "active" : ""}" ${activeLabel === "Dashboard" ? 'data-action="goto-view" data-view="signing"' : ""}>${activeLabel === "Dashboard" ? "Sign & Upload" : activeLabel}</button>
-      </nav>
-    </aside>
-    <div class="main-col">
-      <header class="topbar">
-        <div class="topbar-left"><span class="topbar-crumb-icon" aria-hidden="true">&#9650;</span><span class="topbar-crumb">Start</span></div>
-        <div class="topbar-right"><span class="avatar" aria-label="Aswin A S">AA</span></div>
-      </header>`;
-}
-
-function renderSigningView() {
-  const signing = ensureSigningModel();
-  const { total, done } = signingProgress(signing);
-  const allDone = total > 0 && done === total;
-
-  return `
-    <div class="app-shell">
-      ${renderAppShellNav("Sign & Upload")}
-        <main class="page-root" aria-live="polite">
-          <button class="back-link" data-action="goto-view" data-view="dashboard">\u2190 Back to dashboard</button>
-          <header class="welcome-header">
-            <h1>Sign your incorporation documents</h1>
-            <p>Download the documents, digitally sign them using your DSC, and upload the signed copies here.</p>
-          </header>
-
-          <div class="signing-steps-explainer">
-            <div class="signing-step-explain"><span class="signing-step-num">1</span><div><p class="signing-step-title">Download</p><p class="signing-step-text">Download the document that needs your signature.</p></div></div>
-            <div class="signing-step-explain"><span class="signing-step-num">2</span><div><p class="signing-step-title">Sign</p><p class="signing-step-text">Open it and affix your DSC.</p></div></div>
-            <div class="signing-step-explain"><span class="signing-step-num">3</span><div><p class="signing-step-title">Upload</p><p class="signing-step-text">Upload the digitally signed PDF here.</p></div></div>
-          </div>
-
-          ${
-            allDone
-              ? `<div class="readiness-banner">
-                  <p class="readiness-title">\u2713 All signatures completed</p>
-                  <p class="readiness-text">All required documents have been digitally signed and verified. We'll submit your incorporation application to MCA.</p>
-                </div>`
-              : `<div class="signing-progress-card">
-                  <p class="signing-progress-label">Signatures</p>
-                  <p class="signing-progress-count">${done} of ${total} signatures completed</p>
-                  <div class="doc-progress-bar"><div class="doc-progress-fill" style="width:${total ? Math.round((done / total) * 100) : 0}%"></div></div>
-                </div>`
-          }
-
-          <section class="signers-section">
-            <p class="section-label">People who need to sign</p>
-            ${signing.people.map((p) => renderSignerCard(p)).join("")}
-          </section>
-
-          <div class="wizard-actions is-split signing-final-actions">
-            ${allDone ? "<span></span>" : `<button class="btn btn-secondary" data-action="send-signing-reminder">Send reminder</button>`}
-            <button class="btn btn-primary" data-action="submit-to-mca" ${allDone ? "" : "disabled"}>Submit to MCA</button>
-          </div>
-        </main>
-      </div>
-    </div>`;
-}
-
-/* ===================== Resubmission (MCA changes requested) ===================== */
-
-function renderResubmissionView() {
-  return `
-    <div class="app-shell">
-      ${renderAppShellNav("Review MCA remarks")}
-        <main class="page-root" aria-live="polite">
-          <button class="back-link" data-action="goto-view" data-view="dashboard">\u2190 Back to dashboard</button>
-          <header class="welcome-header">
-            <h1>Changes requested by MCA</h1>
-            <p>Update the highlighted information so we can resubmit your incorporation application.</p>
-          </header>
-
-          <div class="mca-remark-card">
-            <p class="mca-remark-label">MCA remark</p>
-            <p class="mca-remark-text">Registered office address proof does not clearly show the complete address.</p>
-          </div>
-
-          <section class="doc-section">
-            <p class="doc-section-eyebrow">Registered office</p>
-            <div class="affected-doc-row" id="affected-doc-row">
-              <span class="affected-doc-warn">\u26A0 Address proof</span>
-              <button type="button" class="btn btn-secondary btn-sm" data-action="resubmission-replace">Replace document</button>
-            </div>
-          </section>
-
-          <p class="resubmission-deadline">Complete resubmission by <strong>18 Aug 2026</strong></p>
-
-          <div id="resubmission-status"></div>
-
-          <div class="wizard-actions is-split">
-            <span></span>
-            <button class="btn btn-primary" data-action="resubmission-submit" id="resubmission-submit-btn" disabled>Submit updated application</button>
-          </div>
-        </main>
       </div>
     </div>`;
 }
@@ -1688,18 +1081,14 @@ function getStep2SubStatuses() {
 
 // step3 (Company incorporation) sub-statuses progress one at a time.
 function getStep3SubStatuses() {
-  const order = ["details_incomplete", "ready_for_filing", "signing", "submitted", "under_review", "incorporated"];
+  const order = ["details_incomplete", "ready_for_filing", "submitted", "incorporated"];
+  const idx = order.indexOf(currentStage);
   const labels = [
     "Provide incorporation details",
-    "Documents & payment",
-    "Sign & upload documents",
+    "Final review & payment",
     "Submitted to MCA",
-    "MCA review",
     "Company incorporated",
   ];
-  // changes_requested is a branch off "under_review": show it as needing attention at that step.
-  const effectiveStage = currentStage === "changes_requested" ? "under_review" : currentStage;
-  const idx = order.indexOf(effectiveStage);
   return labels.map((label, i) => {
     let state;
     if (idx === -1) {
@@ -1707,7 +1096,7 @@ function getStep3SubStatuses() {
     } else if (i < idx) {
       state = "done";
     } else if (i === idx) {
-      state = currentStage === "incorporated" ? "done" : currentStage === "changes_requested" ? "attention" : "current";
+      state = currentStage === "incorporated" ? "done" : "current";
     } else {
       state = "upcoming";
     }
@@ -1731,7 +1120,6 @@ function getMainStepStatus(step) {
 function subStatusIcon(state) {
   if (state === "done") return "\u2713";
   if (state === "current") return "\u25CF";
-  if (state === "attention") return "!";
   return "\u25CB";
 }
 
@@ -1805,7 +1193,7 @@ function renderStatusCard() {
   const { status } = STAGE_CONFIG[currentStage];
   const ctaHtml = status.cta
     ? `<div class="status-card-actions">
-         <button class="btn btn-primary" data-action="${status.cta.action || "advance"}" data-next="${status.cta.next || ""}" data-view="${status.cta.view || ""}">${status.cta.label}</button>
+         <button class="btn btn-primary" data-action="${status.cta.action || "advance"}" data-next="${status.cta.next || ""}">${status.cta.label}</button>
        </div>`
     : "";
   const extraHtml = status.extra ? `<div class="status-card-extra">${status.extra}</div>` : "";
@@ -1973,10 +1361,7 @@ function renderDashboardView() {
             <button class="demo-opt ${currentStage === "name_approved" ? "active" : ""}" data-stage="name_approved">Name approved</button>
             <button class="demo-opt ${currentStage === "details_incomplete" ? "active" : ""}" data-stage="details_incomplete">Details in progress</button>
             <button class="demo-opt ${currentStage === "ready_for_filing" ? "active" : ""}" data-stage="ready_for_filing">Ready for filing</button>
-            <button class="demo-opt ${currentStage === "signing" ? "active" : ""}" data-stage="signing">Documents to sign</button>
             <button class="demo-opt ${currentStage === "submitted" ? "active" : ""}" data-stage="submitted">Submitted to MCA</button>
-            <button class="demo-opt ${currentStage === "under_review" ? "active" : ""}" data-stage="under_review">MCA review</button>
-            <button class="demo-opt ${currentStage === "changes_requested" ? "active" : ""}" data-stage="changes_requested">Changes requested</button>
             <button class="demo-opt ${currentStage === "incorporated" ? "active" : ""}" data-stage="incorporated">Incorporated</button>
           </div>
         </div>
@@ -2014,12 +1399,6 @@ function render() {
     root.innerHTML = renderPaymentView();
   } else if (currentView === "incorporation") {
     root.innerHTML = renderIncorporationView();
-  } else if (currentView === "ready") {
-    root.innerHTML = renderReadyView();
-  } else if (currentView === "signing") {
-    root.innerHTML = renderSigningView();
-  } else if (currentView === "resubmission") {
-    root.innerHTML = renderResubmissionView();
   } else {
     root.innerHTML = renderDashboardView();
   }
@@ -2171,59 +1550,28 @@ function captureMembersStep() {
   });
 }
 
-// Reads every [data-ofield]/[data-bfield] input for the Business Details step (office/business) into state.
-function captureBusinessDetailsStep() {
-  const container = document.getElementById("business-details-step");
+// Reads every [data-ofield] input for the Company Details step (office/business/share capital) into state.
+function captureCompanyDetailsStep() {
+  const container = document.getElementById("company-details-step");
   if (!container) return;
-  container.querySelectorAll("[data-bfield]").forEach((input) => {
-    incorporation.business[input.dataset.bfield] = input.value;
-  });
   container.querySelectorAll("[data-ofield]").forEach((input) => {
     const field = input.dataset.ofield;
     const value = input.type === "radio" ? (input.checked ? input.value : null) : input.value;
     if (value === null) return;
-    incorporation.office[field] = value;
-  });
-}
-
-// Reads every [data-ofield] input for the Share Capital step into state.
-function captureShareCapitalStep() {
-  const container = document.getElementById("share-capital-step");
-  if (!container) return;
-  container.querySelectorAll("[data-ofield]").forEach((input) => {
-    incorporation.shareCapital[input.dataset.ofield] = Number(input.value) || 0;
+    if (field === "desc") incorporation.business.desc = value;
+    else if (field === "authorizedCapital" || field === "shareValue" || field === "subscribedCapital") {
+      incorporation.shareCapital[field] = Number(value) || 0;
+    } else if (field === "sameAsCommAddress") {
+      incorporation.office.sameAsCommAddress = value;
+    } else {
+      incorporation.office[field] = value;
+    }
   });
   const holders = getAllShareholders();
   container.querySelectorAll("[data-split-index]").forEach((input) => {
     const idx = Number(input.dataset.splitIndex);
     if (holders[idx]) holders[idx].member.ownershipPercent = Number(input.value) || 0;
   });
-}
-
-// Reads the additional-service checkbox and payment method radio on the Payment step into state.
-function captureIncorpPaymentStep() {
-  const container = document.getElementById("payment-step");
-  if (!container) return;
-  const gstEl = container.querySelector("#addon-gst");
-  if (gstEl) incorporation.payment.addOns.gst = gstEl.checked;
-  const methodEl = container.querySelector("input[name='pay-method']:checked");
-  if (methodEl) incorporation.payment.method = methodEl.value;
-}
-
-// Persists whichever step's fields are currently visible, since conditional toggles and
-// step navigation both need the latest DOM values captured into `incorporation` first.
-function captureCurrentIncorpStepFields() {
-  if (incorporation.step === 1) captureBusinessDetailsStep();
-  else if (incorporation.step === 2) captureMembersStep();
-  else if (incorporation.step === 3) captureShareCapitalStep();
-  else if (incorporation.step === 5) captureIncorpPaymentStep();
-}
-
-// Finds a signer + document pair in the Sign & Upload data model.
-function findSignDoc(personKey, docId) {
-  const person = incorporation.signing && incorporation.signing.people.find((p) => p.key === personKey);
-  const doc = person && person.docs.find((d) => d.id === docId);
-  return { person, doc };
 }
 
 // Grows/shrinks a member group's array to match the selected count, preserving existing entries.
@@ -2269,13 +1617,6 @@ document.addEventListener("click", (e) => {
     return;
   }
 
-  if (e.target.closest("[data-action='start-incorporation-wizard']")) {
-    currentView = "incorporation";
-    incorporation.step = 1;
-    render();
-    return;
-  }
-
   const advanceBtn = e.target.closest("[data-action='advance']");
   if (advanceBtn) {
     const next = advanceBtn.dataset.next;
@@ -2303,299 +1644,10 @@ document.addEventListener("click", (e) => {
   if (demoOpt) {
     currentStage = demoOpt.dataset.stage;
     render();
-    return;
-  }
-
-  const gotoBtn = e.target.closest("[data-action='goto-view']");
-  if (gotoBtn) {
-    currentView = gotoBtn.dataset.view;
-    render();
-    return;
-  }
-
-  /* ---------- Incorporation wizard navigation ---------- */
-
-  if (e.target.closest("[data-action='incorp-continue']")) {
-    captureCurrentIncorpStepFields();
-    if (incorporation.step === 4) {
-      const model = buildDocumentModel();
-      const progress = computeDocProgress(model);
-      if (progress.uploaded < progress.total) {
-        const note = document.getElementById("docs-missing-note");
-        if (note) {
-          note.innerHTML = `
-            <div class="missing-docs-note">
-              <p class="missing-docs-title">${progress.missing.length} document${progress.missing.length === 1 ? "" : "s"} ${progress.missing.length === 1 ? "is" : "are"} still required</p>
-              <ul>${progress.missing.map((d) => `<li>${d.label}</li>`).join("")}</ul>
-              <p>Upload these documents to continue.</p>
-            </div>`;
-          note.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-        return;
-      }
-    }
-    incorporation.step = Math.min(6, incorporation.step + 1);
-    render();
-    window.scrollTo(0, 0);
-    return;
-  }
-
-  if (e.target.closest("[data-action='incorp-previous']")) {
-    captureCurrentIncorpStepFields();
-    incorporation.step = Math.max(1, incorporation.step - 1);
-    render();
-    window.scrollTo(0, 0);
-    return;
-  }
-
-  const editBtn = e.target.closest("[data-action='incorp-edit']");
-  if (editBtn) {
-    captureCurrentIncorpStepFields();
-    incorporation.step = Number(editBtn.dataset.step);
-    render();
-    window.scrollTo(0, 0);
-    return;
-  }
-
-  if (e.target.closest("[data-action='save-exit']")) {
-    captureCurrentIncorpStepFields();
-    currentView = "dashboard";
-    render();
-    showToast("Progress saved. Pick up where you left off anytime.");
-    return;
-  }
-
-  /* ---------- Business details step ---------- */
-
-  const companyTypeBtn = e.target.closest("[data-action='set-company-type']");
-  if (companyTypeBtn) {
-    captureBusinessDetailsStep();
-    incorporation.companyType = companyTypeBtn.dataset.value;
-    render();
-    return;
-  }
-
-  /* ---------- Members step ---------- */
-
-  const groupTab = e.target.closest("[data-action='switch-member-group']");
-  if (groupTab) {
-    captureMembersStep();
-    incorporation.activeGroup = groupTab.dataset.group;
-    render();
-    return;
-  }
-
-  const typeBtn = e.target.closest("[data-action='set-member-type']");
-  if (typeBtn) {
-    captureMembersStep();
-    incorporation.members[typeBtn.dataset.group][Number(typeBtn.dataset.index)].type = typeBtn.dataset.type;
-    render();
-    return;
-  }
-
-  const companyTabBtn = e.target.closest("[data-action='switch-company-tab']");
-  if (companyTabBtn) {
-    captureMembersStep();
-    incorporation.members[companyTabBtn.dataset.group][Number(companyTabBtn.dataset.index)].activeCompanyTab = companyTabBtn.dataset.tab;
-    render();
-    return;
-  }
-
-  const addCompanyBtn = e.target.closest("[data-action='add-other-company']");
-  if (addCompanyBtn) {
-    captureMembersStep();
-    incorporation.members[addCompanyBtn.dataset.group][Number(addCompanyBtn.dataset.index)].otherCompanies.push({ cin: "", legalName: "" });
-    render();
-    return;
-  }
-
-  const prefillBtn = e.target.closest("[data-action='prefill']");
-  if (prefillBtn) {
-    showToast(prefillBtn.dataset.message || "Prefilled (demo).");
-    return;
-  }
-
-  /* ---------- Documents step ---------- */
-
-  const uploadBtn = e.target.closest("[data-action='doc-upload']");
-  if (uploadBtn) {
-    const state = getDocState(uploadBtn.dataset.doc);
-    state.status = "uploaded";
-    state.fileName = "document.pdf";
-    state.size = "1.2 MB";
-    state.errorType = null;
-    render();
-    return;
-  }
-
-  const replaceBtn = e.target.closest("[data-action='doc-replace']");
-  if (replaceBtn) {
-    const state = getDocState(replaceBtn.dataset.doc);
-    state.status = "uploaded";
-    state.fileName = "document-v2.pdf";
-    state.size = "1.1 MB";
-    state.errorType = null;
-    render();
-    showToast("Document replaced.");
-    return;
-  }
-
-  const removeBtn = e.target.closest("[data-action='doc-remove']");
-  if (removeBtn) {
-    incorporation.documents[removeBtn.dataset.doc] = { status: "required", fileName: null, size: null, errorType: null };
-    render();
-    return;
-  }
-
-  if (e.target.closest("[data-action='doc-view']")) {
-    showToast("This would open the uploaded document.");
-    return;
-  }
-
-  const simulateErrBtn = e.target.closest("[data-action='doc-simulate-error']");
-  if (simulateErrBtn) {
-    const state = getDocState(simulateErrBtn.dataset.doc);
-    const cycle = ["too_large", "unsupported", "failed", "unreadable"];
-    const nextIdx = state.errorType ? (cycle.indexOf(state.errorType) + 1) % cycle.length : 0;
-    state.status = "error";
-    state.errorType = cycle[nextIdx];
-    render();
-    return;
-  }
-
-  if (e.target.closest("[data-action='contact-support']")) {
-    showToast("Our incorporation team would reach out to help with this participant.");
-    return;
-  }
-
-  /* ---------- Payment step ---------- */
-
-  if (e.target.closest("[data-action='incorp-pay']")) {
-    captureIncorpPaymentStep();
-    const btn = document.getElementById("incorp-pay-btn");
-    const note = document.getElementById("payment-status-note");
-    if (btn) btn.setAttribute("disabled", "true");
-    if (note) {
-      note.innerHTML = `<div class="payment-status-box is-processing"><span class="spinner" aria-hidden="true"></span> Processing your payment\u2026 <span class="payment-status-sub">Please don't close this window.</span></div>`;
-    }
-    setTimeout(() => {
-      incorporation.step = 6;
-      render();
-      showToast("Payment successful.");
-    }, 900);
-    return;
-  }
-
-  /* ---------- Summary step ---------- */
-
-  const toggleCard = e.target.closest("[data-action='toggle-summary-card']");
-  if (toggleCard) {
-    const key = toggleCard.dataset.card;
-    incorporation.summaryCollapsed[key] = !incorporation.summaryCollapsed[key];
-    render();
-    return;
-  }
-
-  if (e.target.closest("[data-action='toggle-declaration-text']")) {
-    const el = document.getElementById("declaration-full");
-    if (el) el.hidden = !el.hidden;
-    return;
-  }
-
-  if (e.target.closest("[data-action='submit-for-incorporation']")) {
-    if (!incorporation.declarationAccepted) return;
-    currentStage = "signing";
-    currentView = "ready";
-    render();
-    return;
-  }
-
-  /* ---------- Sign & Upload Documents ---------- */
-
-  const toggleSigner = e.target.closest("[data-action='toggle-signer']");
-  if (toggleSigner) {
-    const key = toggleSigner.dataset.key;
-    incorporation.signing.expanded[key] = incorporation.signing.expanded[key] === false ? true : false;
-    render();
-    return;
-  }
-
-  const signDownloadBtn = e.target.closest("[data-action='sign-download']");
-  if (signDownloadBtn) {
-    const { doc } = findSignDoc(signDownloadBtn.dataset.person, signDownloadBtn.dataset.doc);
-    if (doc && doc.status !== "checking") {
-      doc.status = "ready_to_sign";
-      doc.errorType = null;
-    }
-    render();
-    showToast("Document downloaded (demo).");
-    return;
-  }
-
-  const signUploadBtn = e.target.closest("[data-action='sign-upload']");
-  if (signUploadBtn) {
-    const personKey = signUploadBtn.dataset.person;
-    const docId = signUploadBtn.dataset.doc;
-    const { doc } = findSignDoc(personKey, docId);
-    if (!doc) return;
-    const select = document.querySelector(`.sign-demo-select[data-person="${personKey}"][data-doc="${docId}"]`);
-    const outcome = select ? select.value : "verified";
-    doc.status = "checking";
-    render();
-    setTimeout(() => {
-      if (outcome === "verified") {
-        doc.status = "verified";
-        doc.errorType = null;
-      } else {
-        doc.status = "error";
-        doc.errorType = outcome;
-      }
-      render();
-    }, 800);
-    return;
-  }
-
-  if (e.target.closest("[data-action='send-signing-reminder']")) {
-    showToast("Reminder sent to pending signatories.");
-    return;
-  }
-
-  if (e.target.closest("[data-action='submit-to-mca']")) {
-    currentStage = "submitted";
-    currentView = "dashboard";
-    render();
-    showToast("Application submitted to MCA.");
-    return;
-  }
-
-  /* ---------- Resubmission ---------- */
-
-  if (e.target.closest("[data-action='resubmission-replace']")) {
-    const row = document.getElementById("affected-doc-row");
-    if (row) row.innerHTML = `<span class="affected-doc-fixed">\u2713 Address proof replaced</span>`;
-    const status = document.getElementById("resubmission-status");
-    if (status) {
-      status.innerHTML = `
-        <div class="readiness-banner">
-          <p class="readiness-title">\u2713 Changes completed</p>
-          <p class="readiness-text">Your updated information is ready. Some documents may need to be digitally signed again.</p>
-        </div>`;
-    }
-    const submitBtn = document.getElementById("resubmission-submit-btn");
-    if (submitBtn) submitBtn.removeAttribute("disabled");
-    showToast("Document replaced.");
-    return;
-  }
-
-  if (e.target.closest("[data-action='resubmission-submit']")) {
-    currentStage = "under_review";
-    currentView = "dashboard";
-    render();
-    showToast("Updated application submitted to MCA.");
-    return;
   }
 });
 
+// Toggle the NIC code dropdown based on the "not sure" checkbox.
 document.addEventListener("change", (e) => {
   if (e.target.id === "nic-unsure") {
     const nicSelect = document.getElementById("nic-code");
@@ -2603,33 +1655,6 @@ document.addEventListener("change", (e) => {
     const unsure = e.target.checked;
     if (nicSelect) nicSelect.disabled = unsure;
     if (infoBox) infoBox.style.display = unsure ? "" : "none";
-    return;
-  }
-
-  if (e.target.id === "member-count-select") {
-    captureMembersStep();
-    resizeMemberGroup(e.target.dataset.group, Number(e.target.value));
-    render();
-    return;
-  }
-
-  if (e.target.id === "addon-gst" || e.target.name === "pay-method") {
-    captureIncorpPaymentStep();
-    render();
-    return;
-  }
-
-  if (e.target.id === "declaration-checkbox") {
-    incorporation.declarationAccepted = e.target.checked;
-    render();
-    return;
-  }
-
-  // Conditional fields (e.g. "Has DIN?", "Same as permanent address?", office ownership) change
-  // which fields are visible \u2014 persist the current step first, then re-render to reveal/hide them.
-  if (e.target.dataset && e.target.dataset.conditional === "true") {
-    captureCurrentIncorpStepFields();
-    render();
   }
 });
 
