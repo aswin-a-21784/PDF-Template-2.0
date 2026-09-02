@@ -2,7 +2,7 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Run BPO Prototype (Python Server)",
+			"label": "Run PDF Editor Prototype (Python Server)",
 			"type": "shell",
 			"command": "python3",
 			"args": [

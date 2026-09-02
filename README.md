@@ -1,32 +1,17 @@
-# Blanket Purchase Order Planning Workspace
+# PDF Editor 2.0 Workspace
 
-Clickable enterprise UX prototype for Blanket Purchase Order workflows.
-
-## What is included
-
-- Blanket Purchase Order List (split view)
-- Create / Edit Blanket Purchase Order form
-- Blanket Purchase Order Details with tabs
-- Schedule Planning workspace (timeline and spreadsheet views)
-- Release Purchase Orders rules and settings
-- Activity and Audit timeline
-- Consumption Tracking table and progress
+Clickable UX prototype of the PDF Editor 2.0 template editor. See
+[pdf-editor-2/README.md](pdf-editor-2/README.md) for full details.
 
 ## Run locally
 
 ```bash
-npm install
-npm run dev
+python3 -m http.server 5173
 ```
 
-Build check:
-
-```bash
-npm run build
-```
+Then open http://localhost:5173/pdf-editor-2/index.html
 
 ## Notes
 
 - This is a front-end prototype focused on UX interaction and information architecture.
-- Data is mocked in src/app.js.
-- Schedule generation, release actions, and planning health are simulated for demonstration.
+- Data is mocked in pdf-editor-2/src/app.js.

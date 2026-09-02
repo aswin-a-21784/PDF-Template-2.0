@@ -1037,14 +1037,7 @@ function renderHeaderFooterProps(kind) {
     </div>
     <div class="prow"><span class="prow-label">Use Different ${kind === "header" ? "Header" : "Footer"} for Subsequent Pages</span>${toggleHtml(`${kind}.differentSubsequent`, hf.differentSubsequent)}</div>
     ${hf.differentSubsequent ? `
-    <div class="prow-stacked">
-      <span class="prow-label">${kind === "header" ? "Header" : "Footer"} View</span>
-      <div class="seg">
-        <button data-action="set-hf-variant" data-kind="${kind}" data-variant="first" class="${hf.activeVariant === "first" ? "active" : ""}">First Page</button>
-        <button data-action="set-hf-variant" data-kind="${kind}" data-variant="subsequent" class="${hf.activeVariant === "subsequent" ? "active" : ""}">Subsequent Page</button>
-      </div>
-    </div>
-    <p class="field-note">The template preview now shows the ${hf.activeVariant === "first" ? "first page" : "subsequent page"} ${kind}. Switch back to First Page to continue editing the main document.</p>` : ""}
+    ` : ""}
   </div>
   <div class="pgroup">
     <p class="pgroup-title">${kind === "header" ? "Header" : "Footer"} Columns</p>
@@ -1153,13 +1146,24 @@ function renderElementProps(sel) {
     <div class="pgroup"><p class="pgroup-title">Content</p>
     <div class="prow-stacked"><span class="prow-label">Text</span><input class="text-input" data-path="${base}.text" data-parse="string" value="${escapeHtml(el.text)}"/></div></div>
     <div class="pgroup"><p class="pgroup-title">Formatting</p>${typographyControlsHtml(base, el, { align: false, resetDefaults: { font: "", color: "", size: 16, lineHeight: "", bold: true, italic: false, underline: false, strike: false } })}</div>${deleteElBtn(sel)}`;
-  if (el.type === "text") return `<div class="pgroup"><p class="pgroup-title">Layout &amp; Spacing</p>${alignRowHtml(`${base}.align`, el.align)}</div>
-    <div class="pgroup"><p class="pgroup-title">Content</p>
-    <p class="field-note">Rich text. Placeholders like %Customer_Displayname% or {{Field}} are supported inline.</p>
-    <textarea class="text-input" rows="4" data-path="${base}.html" data-parse="string">${escapeHtml(el.html)}</textarea>
-    <div style="margin-top:6px;"><button type="button" class="btn btn-outline-dark" style="background:#fff;color:var(--text);border-color:var(--border-strong);" data-action="open-field-picker" data-target="${base}.html">Insert Placeholder</button></div>
-    </div>
-    <div class="pgroup"><p class="pgroup-title">Formatting</p>${typographyControlsHtml(base, el, { align: false, resetDefaults: { font: "", color: "", size: "", lineHeight: "", bold: false, italic: false, underline: false, strike: false } })}</div>${deleteElBtn(sel)}`;
+  if (el.type === "text") {
+    const pickerOpen = state.fieldPickerTarget === `${base}.html`;
+    return `<div class="pgroup"><p class="pgroup-title">Layout &amp; Spacing</p>${alignRowHtml(`${base}.align`, el.align)}</div>
+      <div class="pgroup"><p class="pgroup-title">Content</p>
+      <p class="field-note">Rich text. Placeholders like %Customer_Displayname% or {{Field}} are supported inline.</p>
+      <textarea class="text-input" rows="4" data-path="${base}.html" data-parse="string">${escapeHtml(el.html)}</textarea>
+      <div class="placeholder-picker-wrap" style="margin-top:8px;">
+        <button type="button" class="placeholder-picker-trigger" data-action="toggle-placeholder-menu" data-target="${base}.html">Insert Placeholder</button>
+        ${pickerOpen ? `<div class="placeholder-dropdown" role="menu">
+          <div class="placeholder-search-wrap"><input type="text" value="" placeholder="Search placeholders" data-action="placeholder-search" data-target="${base}.html"/></div>
+          <div class="placeholder-list">
+            ${allModuleFields().map((f) => `<button type="button" class="placeholder-item" data-action="field-picker-insert" data-target="${base}.html" data-placeholder="${f.placeholder}"><span>${f.label}</span><code>${f.placeholder}</code></button>`).join("")}
+          </div>
+        </div>` : ""}
+      </div>
+      </div>
+      <div class="pgroup"><p class="pgroup-title">Formatting</p>${typographyControlsHtml(base, el, { align: false, resetDefaults: { font: "", color: "", size: "", lineHeight: "", bold: false, italic: false, underline: false, strike: false } })}</div>${deleteElBtn(sel)}`;
+  }
   if (el.type === "field") { const isSpaceBetween = (el.layout || "spaceBetween") === "spaceBetween"; return `<div class="pgroup"><p class="pgroup-title">Layout &amp; Spacing</p>
     <div class="prow"><span class="prow-label">Label &amp; Value Layout</span>${selectInput(`${base}.layout`, el.layout || "spaceBetween", [{ value: "spaceBetween", label: "Space Between" }, { value: "inline", label: "Inline" }, { value: "stacked", label: "Stacked" }])}</div>
     ${(el.layout || "spaceBetween") === "inline" ? `<div class="prow"><span class="prow-label">Gap</span>${numInput(`${base}.gap`, el.gap ?? 8)}</div>` : ""}
@@ -1549,6 +1553,27 @@ function renderSpacerSectionHtml(sec, sectionId, index, total) {
   </div>`;
 }
 
+function renderHeaderVariantBar() {
+  const t = state.template;
+  if (!t.page.includeHeader || !t.header.differentSubsequent) return "";
+  const current = t.header.activeVariant;
+  const currentLabel = current === "first" ? "First Page" : "Subsequent Page";
+  return `
+  <div class="header-preview-switch">
+    <span class="header-preview-label">Preview Header:</span>
+    <button type="button" class="header-preview-select" data-action="toggle-header-view-menu" aria-expanded="${state.headerViewMenuOpen ? "true" : "false"}">
+      <span>${currentLabel}</span>
+      <span class="header-preview-caret">▾</span>
+    </button>
+    ${state.headerViewMenuOpen ? `
+      <div class="header-preview-menu" role="menu" aria-label="Header view menu">
+        <button type="button" class="header-preview-option ${current === "first" ? "active" : ""}" data-action="set-hf-variant" data-kind="header" data-variant="first">First Page</button>
+        <button type="button" class="header-preview-option ${current === "subsequent" ? "active" : ""}" data-action="set-hf-variant" data-kind="header" data-variant="subsequent">Subsequent Page</button>
+      </div>
+    ` : ""}
+  </div>`;
+}
+
 function renderPreview() {
   const t = state.template;
   const p = t.page;
@@ -1582,6 +1607,7 @@ function renderPreview() {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;color:var(--muted);font-size:11.5px;">
       <span>Template Preview &middot; ${p.paperSize} &middot; ${p.orientation}</span>
     </div>
+    ${renderHeaderVariantBar()}
     <div class="page-outer" id="page-outer" style="${outerStyle}">
       <div class="margin-hl-overlay" id="hl-margin" style="border-width:${p.margin.t}px ${p.margin.r}px ${p.margin.b}px ${p.margin.l}px;"></div>
       <div class="content-box" id="content-box" style="${contentStyle}">
@@ -1832,8 +1858,14 @@ document.addEventListener("click", (e) => {
   }
   if (closest("[data-action='confirm-cancel']")) { state.confirmDialog = null; renderAll(); return; }
 
+  if (closest("[data-action='toggle-header-view-menu']")) {
+    state.headerViewMenuOpen = !state.headerViewMenuOpen;
+    renderAll();
+    return;
+  }
   if (closest("[data-action='set-hf-variant']")) {
     const d = closest("[data-action='set-hf-variant']").dataset;
+    state.headerViewMenuOpen = false;
     mutate(() => { state.template[d.kind].activeVariant = d.variant; });
     renderAll();
     return;
@@ -2067,16 +2099,36 @@ document.addEventListener("click", (e) => {
     return;
   }
 
-  if (closest("[data-action='open-field-picker']")) {
-    state.fieldPickerTarget = closest("[data-action='open-field-picker']").dataset.target;
-    renderFieldPickerModal();
+  if (closest("[data-action='toggle-placeholder-menu']")) {
+    const target = closest("[data-action='toggle-placeholder-menu']").dataset.target;
+    state.fieldPickerTarget = state.fieldPickerTarget === target ? null : target;
+    renderAll();
     return;
   }
-  if (closest("[data-action='field-picker-close']")) { closeFieldPickerModal(); return; }
   if (closest("[data-action='field-picker-insert']")) {
-    const ph = closest("[data-action='field-picker-insert']").dataset.placeholder;
-    mutate(() => { const cur = getNested(state.template, state.fieldPickerTarget) || ""; setNested(state.template, state.fieldPickerTarget, `${cur} ${ph}`.trim()); });
-    closeFieldPickerModal();
+    const btn = closest("[data-action='field-picker-insert']");
+    const ph = btn.dataset.placeholder;
+    const target = btn.dataset.target || state.fieldPickerTarget;
+    if (!target) return;
+    mutate(() => { const cur = getNested(state.template, target) || ""; setNested(state.template, target, `${cur} ${ph}`.trim()); });
+    state.fieldPickerTarget = null;
+    renderAll();
+    return;
+  }
+  if (closest("[data-action='placeholder-search']")) {
+    const search = closest("[data-action='placeholder-search']");
+    const value = search.value.toLowerCase();
+    const menu = search.closest(".placeholder-dropdown");
+    if (!menu) return;
+    const items = menu.querySelectorAll(".placeholder-item");
+    items.forEach((item) => {
+      const text = (item.textContent || "").toLowerCase();
+      item.style.display = text.includes(value) ? "flex" : "none";
+    });
+    return;
+  }
+  if (state.fieldPickerTarget && !closest(".placeholder-picker-wrap") && !closest("[data-action='toggle-placeholder-menu']") && !closest("[data-action='field-picker-insert']") && !closest("[data-action='placeholder-search']")) {
+    state.fieldPickerTarget = null;
     renderAll();
     return;
   }
@@ -2105,19 +2157,6 @@ document.addEventListener("click", (e) => {
   if (closest(".preview-pane") && state.selection.type !== "page") { applySelection({ type: "page" }); return; }
 });
 
-/* ===================== Simple field-picker modal (Insert Placeholder) ===================== */
-function renderFieldPickerModal() {
-  let host = document.getElementById("field-picker-modal");
-  if (!host) { host = document.createElement("div"); host.id = "field-picker-modal"; document.body.appendChild(host); }
-  host.innerHTML = `<div class="confirm-modal-backdrop" data-backdrop-dismiss="field-picker">
-    <div class="confirm-modal" style="width:320px;max-height:70vh;overflow:auto;">
-      <h3>Insert Placeholder</h3>
-      ${MODULE_FIELD_GROUPS.map((g) => `<p class="field-group-title" style="padding-left:0;">${g.group}</p>${g.fields.map((f) => `<div class="field-row" style="padding:6px 0;cursor:pointer;" data-action="field-picker-insert" data-placeholder="${f.placeholder}"><span class="field-name">${f.label}</span><span class="muted" style="font-size:10.5px;">${f.placeholder}</span></div>`).join("")}`).join("")}
-      <div class="modal-actions" style="margin-top:10px;"><button class="btn btn-outline-dark" style="background:#fff;color:var(--text);border-color:var(--border-strong);" data-action="field-picker-close">Close</button></div>
-    </div>
-  </div>`;
-}
-function closeFieldPickerModal() { const host = document.getElementById("field-picker-modal"); if (host) host.innerHTML = ""; }
 
 /* ===================== Drag & drop ===================== */
 // dataTransfer.getData() is unreliable to read during dragover in most browsers, so the active
