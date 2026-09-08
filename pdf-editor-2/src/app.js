@@ -678,7 +678,7 @@ function renderAll() {
     <div class="demo-bar">
       <b>PDF Editor 2.0 (prototype)</b>
       <span>&mdash;</span>
-      <span>Click any section / column / element in the preview to select &amp; edit it.</span>
+      <span>Click any section / column / element in the preview to select &amp; edit it. Hold &#8997; Option for a column, &#8984;/Ctrl for an element.</span>
       <span class="demo-link" data-action="demo-reset">Reset demo template</span>
     </div>
     <div class="editor-shell">
@@ -1375,6 +1375,19 @@ function findAncestorByType(node, types) {
 function effectiveSelectableFromEvent(e) {
   const sectionEl = findAncestorByType(e.target, ["section", "header", "footer"]);
   if (!sectionEl) return null;
+  // Modifier shortcuts skip the progressive drill-down so a column/element can be picked in a
+  // single hover or click: Cmd/Ctrl jumps straight to the deepest element, Option/Alt jumps
+  // straight to the column.
+  if (e.metaKey || e.ctrlKey) {
+    const deepEl = findAncestorByType(e.target, ["element", "tableColumn", "staticCell"]);
+    if (deepEl) return deepEl;
+    const columnEl = findAncestorByType(e.target, ["column"]);
+    return columnEl || sectionEl;
+  }
+  if (e.altKey) {
+    const columnEl = findAncestorByType(e.target, ["column"]);
+    return columnEl || sectionEl;
+  }
   const sectionId = sectionEl.dataset.section;
   if (state.drill.sectionId !== sectionId) return sectionEl;
   const columnEl = findAncestorByType(e.target, ["column"]);
@@ -2298,24 +2311,52 @@ document.addEventListener("mouseout", (e) => {
 
 /* ===================== Progressive hover highlighting (preview pane) ===================== */
 // Mirrors the drill-down click behavior: only the "effective" selectable node at the current
-// drill depth gets the hover outline (section, then its columns once entered, then elements).
+// drill depth gets the hover outline (section, then its columns once entered, then elements),
+// unless the Option/Cmd bypass in effectiveSelectableFromEvent() is active.
 let hoverEffectiveEl = null;
+// Last cursor position inside the preview pane, replayed on modifier keydown/keyup so the
+// highlight updates immediately even if the mouse hasn't moved since the key was pressed.
+let lastPreviewPoint = null;
 function clearHoverEffective() {
   if (hoverEffectiveEl) { hoverEffectiveEl.classList.remove("hover-effective"); hoverEffectiveEl = null; }
 }
-document.addEventListener("mouseover", (e) => {
-  if (!e.target.closest(".preview-pane")) return;
+function updateHoverEffectiveFromEvent(e) {
   const eff = effectiveSelectableFromEvent(e);
   if (eff === hoverEffectiveEl) return;
   clearHoverEffective();
   hoverEffectiveEl = eff;
   if (hoverEffectiveEl) hoverEffectiveEl.classList.add("hover-effective");
+}
+document.addEventListener("mouseover", (e) => {
+  if (!e.target.closest(".preview-pane")) return;
+  updateHoverEffectiveFromEvent(e);
+});
+document.addEventListener("mousemove", (e) => {
+  if (!e.target.closest(".preview-pane")) { lastPreviewPoint = null; return; }
+  lastPreviewPoint = { x: e.clientX, y: e.clientY };
 });
 document.addEventListener("mouseout", (e) => {
   if (!e.target.closest(".preview-pane")) return;
   const related = e.relatedTarget;
   if (related && related.closest && related.closest(".preview-pane")) return;
+  lastPreviewPoint = null;
   clearHoverEffective();
+});
+function replayHoverAtLastPoint(modifiers) {
+  if (!lastPreviewPoint) return;
+  const target = document.elementFromPoint(lastPreviewPoint.x, lastPreviewPoint.y);
+  if (!target || !target.closest(".preview-pane")) return;
+  updateHoverEffectiveFromEvent({ target, ...modifiers });
+}
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Alt" || e.key === "Meta" || e.key === "Control") {
+    replayHoverAtLastPoint({ altKey: e.altKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey });
+  }
+});
+document.addEventListener("keyup", (e) => {
+  if (e.key === "Alt" || e.key === "Meta" || e.key === "Control") {
+    replayHoverAtLastPoint({ altKey: e.altKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey });
+  }
 });
 
 document.addEventListener("keydown", (e) => {

@@ -22,6 +22,15 @@
   --danger-soft: #fdecec;
   --placeholder: #7c3aed;
   --placeholder-soft: #f1e9ff;
+  --sel-section: #2f6feb;
+  --sel-section-soft: rgba(47,111,235,0.55);
+  --sel-section-bg: rgba(47,111,235,0.08);
+  --sel-column: #d3760a;
+  --sel-column-soft: rgba(211,118,10,0.55);
+  --sel-column-bg: rgba(211,118,10,0.08);
+  --sel-element: #0d9488;
+  --sel-element-soft: rgba(13,148,136,0.55);
+  --sel-element-bg: rgba(13,148,136,0.08);
   --radius: 10px;
   --radius-sm: 8px;
   --shadow: 0 8px 24px rgba(20, 30, 55, 0.08);
@@ -314,13 +323,26 @@ select.select-input { appearance: auto; }
 .selectable { position: relative; cursor: pointer; user-select: none; }
 .selectable > .sel-tag {
   position: absolute; top: -1px; left: -1px; transform: translateY(-100%);
-  background: var(--primary); color: #fff; font-size: 9.5px; font-weight: 700; padding: 2px 7px;
+  background: var(--sel-section); color: #fff; font-size: 9.5px; font-weight: 700; padding: 2px 7px;
   border-radius: 4px 4px 4px 0; white-space: nowrap; display: none; z-index: 20; align-items: center; gap: 6px;
 }
+/* Section/column/element get distinct highlight colors so the current drill depth is obvious at a glance. */
+.selectable[data-sel-type="column"] > .sel-tag { background: var(--sel-column); }
+.selectable[data-sel-type="element"] > .sel-tag,
+.selectable[data-sel-type="staticCell"] > .sel-tag,
+.selectable[data-sel-type="tableColumn"] > .sel-tag { background: var(--sel-element); }
 .selectable.hover-effective > .sel-tag { display: inline-flex; }
-.selectable.is-selected { outline: 1.5px solid var(--primary); outline-offset: -1px; }
+.selectable.is-selected { outline: 1.5px solid var(--sel-section); outline-offset: -1px; }
+.selectable[data-sel-type="column"].is-selected { outline-color: var(--sel-column); }
+.selectable[data-sel-type="element"].is-selected,
+.selectable[data-sel-type="staticCell"].is-selected,
+.selectable[data-sel-type="tableColumn"].is-selected { outline-color: var(--sel-element); }
 .selectable.is-selected > .sel-tag { display: inline-flex; background: var(--text); }
-.selectable.hover-effective:not(.is-selected) { outline: 1px dashed rgba(47,111,235,0.5); outline-offset: -1px; }
+.selectable.hover-effective:not(.is-selected) { outline: 1px dashed var(--sel-section-soft); outline-offset: -1px; }
+.selectable[data-sel-type="column"].hover-effective:not(.is-selected) { outline-color: var(--sel-column-soft); }
+.selectable[data-sel-type="element"].hover-effective:not(.is-selected),
+.selectable[data-sel-type="staticCell"].hover-effective:not(.is-selected),
+.selectable[data-sel-type="tableColumn"].hover-effective:not(.is-selected) { outline-color: var(--sel-element-soft); }
 .sel-tag .tag-act { background: rgba(255,255,255,0.18); border: 0; color: #fff; width: 15px; height: 15px; border-radius: 3px; font-size: 9px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
 .sel-tag .tag-act:hover { background: rgba(255,255,255,0.35); }
 
@@ -348,7 +370,7 @@ select.select-input { appearance: auto; }
   position: relative;
   background: repeating-linear-gradient(45deg, rgba(20,30,55,0.035) 0 6px, transparent 6px 12px);
 }
-.doc-spacer.hover-effective, .doc-spacer.is-selected { background: rgba(47,111,235,0.08); }
+.doc-spacer.hover-effective, .doc-spacer.is-selected { background: var(--sel-section-bg); }
 
 .dropzone-empty {
   border: 1.5px dashed var(--border-strong); border-radius: 6px; background: var(--panel-soft);
@@ -436,9 +458,9 @@ table.doc-table th, table.doc-table td { padding: 5px 6px; vertical-align: top; 
 .tbl-emerald th { background: #ebfaf2; } .tbl-emerald td { border-bottom: 1px solid #d8f1e4; }
 table.doc-table th { font-weight: 700; text-align: left; }
 .cell-select { cursor: pointer; }
-.cell-select.is-selected { outline: 1.5px solid var(--primary); outline-offset: -1px; background: rgba(47,111,235,0.06); }
+.cell-select.is-selected { outline: 1.5px solid var(--sel-element); outline-offset: -1px; background: var(--sel-element-bg); }
 .tcol-select { cursor: pointer; }
-.tcol-select.is-selected { outline: 1.5px solid var(--primary); outline-offset: -1px; background: rgba(47,111,235,0.06); }
+.tcol-select.is-selected { outline: 1.5px solid var(--sel-element); outline-offset: -1px; background: var(--sel-element-bg); }
 
 .muted-sm { color: var(--muted); font-size: 0.86em; }
 
