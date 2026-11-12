@@ -371,12 +371,14 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .check input:checked::after{transform:translateY(-1px) rotate(-45deg) scale(1)}
 
 /* search */
-.search{display:flex;align-items:center;gap:6px;height:34px;padding:0 9px;border:1px solid var(--input);border-radius:5px;margin:10px 0 0;transition:border-color var(--t1),box-shadow var(--t1);color:var(--muted-2)}
+.search{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border:1px solid var(--input);border-radius:5px;margin:14px 0 0;transition:border-color var(--t1),box-shadow var(--t1);color:var(--muted-2)}
 .search:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(28,91,217,.12)}
 .search input{flex:1;border:0;outline:0;font-size:13px;color:var(--ink);background:transparent;min-width:0}
 .search input::placeholder{color:#8A8C9C}
 .sticky-tools{position:sticky;top:0;background:#fff;z-index:3;margin:0 -20px;padding:16px 20px 14px;border-bottom:1px solid transparent;transition:border-color var(--t2),box-shadow var(--t2)}
-.sticky-tools.divided{border-bottom:1px solid var(--line);margin-bottom:4px}
+.sticky-tools.divided{border-bottom:1px solid var(--line);margin-bottom:4px;padding-bottom:20px}
+.tools-check{margin-top:20px;line-height:1}
+[data-pane="fields"]{padding-top:24px}
 .sticky-tools.scrolled{border-bottom-color:var(--line);box-shadow:0 4px 10px -8px rgba(24,34,54,.18)}
 
 /* insert: component cards */
@@ -402,8 +404,8 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .mini-doc-inner{position:absolute;top:6px;left:8px;width:640px;transform-origin:0 0}
 
 /* insert: module field chips */
-.fgroup{margin-bottom:20px}
-.fgroup h4{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);margin:0 0 10px}
+.fgroup{margin-bottom:26px}
+.fgroup h4{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);margin:0 0 12px}
 .chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .chip{display:flex;align-items:center;gap:5px;min-width:0;height:34px;padding:0 7px 0 4px;border:1px solid var(--line-2);border-radius:5px;background:#fff;font-size:12px;color:var(--ink);text-align:left;cursor:grab;touch-action:none;user-select:none;transition:border-color var(--t2),background var(--t2),box-shadow var(--t2),transform var(--t1) var(--ease),opacity var(--t2)}
 .chip .dots{color:#A5A8B8;flex:none}
@@ -493,7 +495,7 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.25)}
 .zoom select{appearance:none;-webkit-appearance:none;border:0;background:transparent;outline:0;height:100%;padding:0 24px 0 9px;font-size:12.5px;color:var(--ink);cursor:pointer;font-variant-numeric:tabular-nums}
 .zoom .chev{position:absolute;right:6px;pointer-events:none;color:var(--muted-2)}
 .ctool-r{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:12.5px;color:var(--ink)}
-.ctool-title{font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-.005em}
+.ctool-title{font-size:14.5px;font-weight:600;color:var(--ink);line-height:1}
 .stage-scroll{flex:1;overflow:auto;position:relative;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#D3D6E4 transparent}
 .stage-scroll:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
 .stage{position:relative;min-width:100%;width:max-content;padding:56px 48px 120px;display:flex;flex-direction:column;align-items:center}
@@ -1340,7 +1342,7 @@ function bgImageCtl(p) {
 }
 function panelInsert() {
   const tab = S.ui.insertTab;
-  const tabs = `<div class="sticky-tools divided" data-sticky>${seg("__insertTab", [["components", "Components"], ["fields", "Module Fields"]], { value: tab, ui: "insertTab", cls: "lg", aria: "Insert type" })}${tab === "fields" ? `<div style="margin-top:14px"><label class="check"><input type="checkbox" data-ui-check="unusedOnly"${S.ui.unusedOnly ? " checked" : ""}>Show only unused fields</label></div><label class="search">${ic("search", 14)}<input type="search" placeholder="Search" data-ui-search value="${esc(S.ui.search)}" aria-label="Search module fields"></label>` : ""}</div>`;
+  const tabs = `<div class="sticky-tools divided" data-sticky>${seg("__insertTab", [["components", "Components"], ["fields", "Module Fields"]], { value: tab, ui: "insertTab", cls: "lg", aria: "Insert type" })}${tab === "fields" ? `<div class="tools-check"><label class="check"><input type="checkbox" data-ui-check="unusedOnly"${S.ui.unusedOnly ? " checked" : ""}>Show only unused fields</label></div><label class="search">${ic("search", 14)}<input type="search" placeholder="Search" data-ui-search value="${esc(S.ui.search)}" aria-label="Search module fields"></label>` : ""}</div>`;
   return tabs + `<div class="tabpane" data-pane="${tab}">${tab === "components" ? insertComponents() : insertFields()}</div>`;
 }
 let __miniCache = null;
@@ -1360,7 +1362,7 @@ function insertComponents() {
   const empties = Object.entries(EMPTY_SECTIONS).map(([k, [name, w]]) => `<button type="button" class="preset" data-drag="sec:${k}" aria-label="${name} section. Drag between sections, or press Enter to add">${`<div class="pz">${w.map((x, i) => `<span style="flex:${x}">${LAYOUT_LABEL[k][i]}</span>`).join("")}</div>`}<div class="p-lbl"><span class="dots">${ic("dots", 14)}</span>${name}</div></button>`).join("");
   const mods = Object.entries(MODULE_SECTIONS).map(([k, [name]]) => `<button type="button" class="preset" data-drag="mod:${k}" aria-label="${name} section">${md.modules[k]}<div class="p-lbl"><span class="dots">${ic("dots", 14)}</span>${name}</div></button>`).join("");
   const tbls = Object.entries(TABLE_PRESETS).map(([k, name]) => `<button type="button" class="preset" data-drag="tbl:${k}" aria-label="${name}">${md.tables[k]}<div class="p-lbl"><span class="dots">${ic("dots", 14)}</span>${name}</div></button>`).join("");
-  return pg("Elements", `<div class="comp-grid">${comps}</div>`, { cls: "flush-top" }) + pg("Empty Sections", empties, { note: "A section starts with one column. Change it to 2, 3 or 4 columns in Properties." }) + pg("Predefined Sections", mods) + pg("Predefined Tables", tbls, { note: "Module tables whose data comes from the transaction. Drop one into a column." });
+  return pg("Elements", `<div class="comp-grid">${comps}</div>`, { cls: "flush-top" }) + pg("Empty Sections", empties) + pg("Predefined Sections", mods) + pg("Predefined Tables", tbls);
 }
 function usedSet() { const j = JSON.stringify(S.T); return new Set(ALL_PLACEHOLDERS.map(([k]) => k).filter((k) => j.includes(`%${k}%`))); }
 function insertFields() {
@@ -1598,7 +1600,7 @@ function renderCanvas(o = {}) {
   const r = renderDoc(S.T, ctxNow()); S.pageW = r.w; S.pageH = r.h;
   page.innerHTML = r.html;
   extendToPages(); sizePage();
-  if (before) flip(before);
+  if (before) { flip(before); trackOverlays(380); }  // outline, tag and action bar travel with the moving content
   renderPreviewTabs();
   if (S.flash) { const f = S.flash; S.flash = null; const n = f.eid ? page.querySelector(`[data-eid="${f.eid}"]`) : page.querySelector(`[data-sid="${f.sid}"]`); if (n) { n.classList.add("flash-new"); setTimeout(() => n.scrollIntoView({ block: "nearest", behavior: RM.matches ? "auto" : "smooth" }), 60); } }
   if (S.flashBand) { const k = S.flashBand; S.flashBand = null; const n = page.querySelector(`[data-node=${k}]`); requestAnimationFrame(() => glimpse(n, k === "footer" ? "Footer" : S.ui.variant === "sub" && S.T.header.diffSub ? "Subsequent Header" : "Header", "var(--tag-section)")); }
