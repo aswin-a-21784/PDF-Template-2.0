@@ -22,3 +22,9 @@ python3 -m http.server 5173
 
 Open [http://localhost:5173/pdf-editor-2/](http://localhost:5173/pdf-editor-2/).
 No build step is required.
+
+## Hosted preview
+
+The Catalyst development preview is available at
+[pdfeditor-60084712969.development.catalystserverless.in/app/index.html](https://pdfeditor-60084712969.development.catalystserverless.in/app/index.html).
+The deployable web client is mirrored in `client/`.
