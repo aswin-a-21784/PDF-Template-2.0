@@ -13,5 +13,5 @@ Then open http://localhost:5173/pdf-editor-2/index.html
 
 ## Notes
 
-- This is a front-end prototype focused on UX interaction and information architecture.
-- Data is mocked in pdf-editor-2/src/app.js.
+- The full interactive prototype is a standalone HTML file in `pdf-editor-2/index.html`.
+- Data is sample content stored in the prototype for local interaction.
