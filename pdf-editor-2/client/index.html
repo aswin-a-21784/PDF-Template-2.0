@@ -1925,6 +1925,7 @@ function setSeg(segEl, btn) {
 }
 function onPanelKey(e) {
   const t = e.target;
+  if (e.altKey || e.metaKey || e.ctrlKey) return;
   if (t.closest("[data-seg]") && t.matches("button[data-v]") && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
     const segEl = t.closest("[data-seg]"), btns = $$("button[data-v]", segEl), i = btns.indexOf(t);
     const n = btns[(i + (e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 1) + btns.length) % btns.length];
@@ -2168,7 +2169,7 @@ function moveSel(d) {
   const s = S.sel; if (!s || (s.kind !== "element" && s.kind !== "section" && s.kind !== "column")) return; const L = locate(s); if (!L) return;
   const arr = s.kind === "element" ? L.c.els : s.kind === "column" ? L.s.cols : S.T.sections, i = s.kind === "element" ? L.ei : s.kind === "column" ? L.ci : L.si, j = i + d;
   if (j < 0 || j >= arr.length) return;
-  mutate(() => { const [x] = arr.splice(i, 1); arr.splice(j, 0, x); }, { panel: true }); announce(`Moved ${s.kind === "column" ? (d < 0 ? "left" : "right") : d < 0 ? "up" : "down"}`);
+  mutate(() => { const [x] = arr.splice(i, 1); arr.splice(j, 0, x); }, { panel: true }); announce(`Moved ${s.kind === "column" ? (d < 0 ? "left" : "right") : d < 0 ? "up" : "down"} to position ${j + 1} of ${arr.length}`);
 }
 function reidEl(e) {
   const c = clone(e); c.id = uid("e");
@@ -2429,14 +2430,15 @@ function init() {
   const modKey = (e) => { if (!["Meta", "Control", "Alt"].includes(e.key) || !S.ptr || S.dnd || isTyping(e.target)) return; hoverAt(S.ptr, modsOf(e)); };
   document.addEventListener("keydown", modKey); document.addEventListener("keyup", modKey);
   wrap.addEventListener("click", (e) => {
-    if (e.target.closest(".overlay") || S.justDragged) return;
-    const t = hitTarget(e.target, modsOf(e)); if (t && t.kind !== "page") select(t);   // empty page area keeps the current selection
+    if (e.target.closest(".overlay") || S.justDragged) return; 
+    const t = hitTarget(e.target, modsOf(e)); if (t && t.kind !== "page") select(t);
+    if (document.activeElement !== scroller) scroller.focus({ preventScroll: true });   // empty page area keeps the current selection
   });
 
   scroller.addEventListener("wheel", (e) => { if (!(e.ctrlKey || e.metaKey)) return; e.preventDefault(); setZoom(S.zoom * Math.exp(-e.deltaY * .0028), { ev: e, instant: true }); }, { passive: false });
   scroller.addEventListener("keydown", (e) => {
-    if (e.target !== scroller) return;
-    if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); navStep(1); } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { if (e.altKey) return; e.preventDefault(); navStep(-1); } else if (e.key === "Enter") { e.preventDefault(); drillIn(); }
+    if (e.target !== scroller || e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); navStep(1); } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); navStep(-1); } else if (e.key === "Enter") { e.preventDefault(); drillIn(); }
   });
   $("#previewTabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (b) setSeg(b.closest("[data-seg]"), b); });
   $("#abar").addEventListener("click", (e) => { const b = e.target.closest("[data-ab]"); if (!b || b.disabled) return; ({ up: () => moveSel(-1), down: () => moveSel(1), dup: dupSel, del: deleteSel })[b.dataset.ab](); });
@@ -2485,8 +2487,12 @@ function init() {
     if (mod && k === "0") { e.preventDefault(); setZoom(100); return; }
     if (mod && k === "d" && S.sel) { e.preventDefault(); dupSel(); return; }
     if ((e.key === "Delete" || e.key === "Backspace") && S.sel && S.mode === "props") { e.preventDefault(); deleteSel(); return; }
-    if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown") && S.sel && S.sel.kind !== "column") { e.preventDefault(); moveSel(e.key === "ArrowUp" ? -1 : 1); }
-    if (e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowRight") && S.sel && S.sel.kind === "column") { e.preventDefault(); moveSel(e.key === "ArrowLeft" ? -1 : 1); }
+    if (e.altKey && !mod && e.key.startsWith("Arrow") && S.sel && S.mode === "props") {
+      e.preventDefault(); e.stopPropagation();
+      const col = S.sel.kind === "column", vertical = e.key === "ArrowUp" || e.key === "ArrowDown";
+      if (col !== vertical) moveSel(e.key === "ArrowUp" || e.key === "ArrowLeft" ? -1 : 1);
+      else if (!e.repeat) announce(col ? "Columns move with Option + Left or Right" : "Move with Option + Up or Down");
+    }
   });
   addEventListener("beforeunload", (e) => { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
 
