@@ -395,7 +395,8 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .comp .c-ico{color:var(--ink);transition:transform var(--t2) var(--spring),color var(--t2)}
 .comp .c-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:0;padding-bottom:3px}
 .comp .c-lbl{font-size:13px;line-height:1.18;text-wrap:balance}
-.comp .dots{color:#A5A8B8;line-height:0;flex:none}
+.comp .dots{color:#8F93A8;line-height:0;flex:none;transition:color var(--t2) var(--ease),transform var(--t2) var(--ease)}
+.comp .dots svg,.p-lbl .dots svg{margin:-5px 0}
 .comp.is-src{opacity:.4;transform:scale(.97)}
 .preset{display:block;width:100%;border:1px solid var(--line-2);border-radius:6px;background:#fff;padding:11px 11px 10px;margin-bottom:12px;cursor:grab;touch-action:none;user-select:none;text-align:center;box-shadow:0 1px 0 rgba(24,34,54,.04);transition:border-color var(--t2),background var(--t2),box-shadow var(--t2),transform var(--t2) var(--ease)}
 .preset:hover{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 4px 12px -6px rgba(28,91,217,.3)}
@@ -406,7 +407,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .preset:hover .pz span{border-color:#9DB6EE;background:#EEF3FE}
 .p-lbl{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;font-size:13px;color:var(--text)}
 .preset:hover .p-lbl{color:var(--blue)}
-.p-lbl .dots{color:#A5A8B8}
+.p-lbl .dots{color:#8F93A8;line-height:0;transition:color var(--t2) var(--ease)}
 .mini-doc{position:relative;height:54px;overflow:hidden;border-radius:3px;background:#fff;pointer-events:none;border:1px solid #F0F1F7}
 .mini-doc-inner{position:absolute;top:6px;left:8px;width:640px;transform-origin:0 0}
 
@@ -415,9 +416,11 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .fgroup h4{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);margin:0 0 14px}
 .chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 6px}
 .chip{display:flex;align-items:center;gap:2px;min-width:0;height:30px;padding:0 7px 0 5px;border:1px solid var(--line-2);border-radius:4px;background:#fff;font-size:12px;color:var(--ink);text-align:left;cursor:grab;touch-action:none;user-select:none;transition:border-color var(--t2),background var(--t2),box-shadow var(--t2),transform var(--t1) var(--ease),opacity var(--t2)}
-.chip .dots{color:#A5A8B8;flex:none}
+.chip .dots{color:#8F93A8;flex:none;line-height:0;transition:color var(--t2) var(--ease)}
 .chip .chip-lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chip .ck{flex:none;line-height:0;margin-left:4px}
+.comp:hover .dots,.preset:hover .p-lbl .dots,.chip:hover .dots{color:var(--blue)}
+.comp:hover .dots{transform:translateY(-1px)}
 .chip:hover{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 3px 10px -6px rgba(28,91,217,.4)}
 .chip:active{cursor:grabbing;transform:scale(.97)}
 .chip.used{background:#F5F6FC;color:#8A8C9C}
@@ -750,8 +753,8 @@ const ICONS = {
   eye:'<path d="M1.75 8S4 3.75 8 3.75 14.25 8 14.25 8 12 12.25 8 12.25 1.75 8 1.75 8z"/><circle cx="8" cy="8" r="1.9"/>',
   eyeOff:'<path d="M6.3 4a6 6 0 0 1 1.7-.25C12 3.75 14.25 8 14.25 8a10.6 10.6 0 0 1-1.8 2.35M9.4 11.95A5.7 5.7 0 0 1 8 12.25C4 12.25 1.75 8 1.75 8a10.5 10.5 0 0 1 2.55-2.95"/><path d="M2.5 2.5l11 11M6.6 6.6a1.9 1.9 0 0 0 2.8 2.8"/>',
   trash:'<path d="M2.75 4.25h10.5M6.25 4.25V3a.75.75 0 0 1 .75-.75h2a.75.75 0 0 1 .75.75v1.25M4.25 4.25l.6 8.6a1 1 0 0 0 1 .9h4.3a1 1 0 0 0 1-.9l.6-8.6"/><path d="M6.75 7v4M9.25 7v4"/>',
-  grip:'<g fill="currentColor" stroke="none"><circle cx="6" cy="4" r="1"/><circle cx="10" cy="4" r="1"/><circle cx="6" cy="8" r="1"/><circle cx="10" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="10" cy="12" r="1"/></g>',
-  dots:'<g fill="currentColor" stroke="none"><circle cx="5" cy="6.5" r=".9"/><circle cx="8" cy="6.5" r=".9"/><circle cx="11" cy="6.5" r=".9"/><circle cx="5" cy="9.5" r=".9"/><circle cx="8" cy="9.5" r=".9"/><circle cx="11" cy="9.5" r=".9"/></g>',
+  grip:'<g fill="currentColor" stroke="none"><circle cx="6" cy="4" r="1.2"/><circle cx="10" cy="4" r="1.2"/><circle cx="6" cy="8" r="1.2"/><circle cx="10" cy="8" r="1.2"/><circle cx="6" cy="12" r="1.2"/><circle cx="10" cy="12" r="1.2"/></g>',
+  dots:'<g fill="currentColor" stroke="none"><circle cx="4.25" cy="6.25" r="1.15"/><circle cx="8" cy="6.25" r="1.15"/><circle cx="11.75" cy="6.25" r="1.15"/><circle cx="4.25" cy="9.75" r="1.15"/><circle cx="8" cy="9.75" r="1.15"/><circle cx="11.75" cy="9.75" r="1.15"/></g>',
   more:'<g fill="currentColor" stroke="none"><circle cx="3.5" cy="8" r="1.1"/><circle cx="8" cy="8" r="1.1"/><circle cx="12.5" cy="8" r="1.1"/></g>',
   alignBottom:'<path d="M2.5 13.5h11"/><rect x="4.25" y="3" width="2.5" height="8.5" rx=".6"/><rect x="9.25" y="6.5" width="2.5" height="5" rx=".6"/>',
   alignMiddle:'<path d="M2.5 8h2M7 8h2M11.5 8h2"/><rect x="4.25" y="3.5" width="2.5" height="9" rx=".6"/><rect x="9.25" y="5.25" width="2.5" height="5.5" rx=".6"/>',
@@ -1366,16 +1369,16 @@ function miniDocs() {
 }
 function insertComponents() {
   const md = miniDocs();
-  const comps = COMPONENTS.map(([k, name, icn]) => `<button type="button" class="comp" data-drag="el:${k}" aria-label="${name}. Drag onto the page, or press Enter to add after the selection"><span class="c-body">${ic(icn, 18, 'class="c-ico"')}<span class="c-lbl">${name}</span></span><span class="dots" aria-hidden="true">${ic("dots", 10)}</span></button>`).join("");
-  const empties = Object.entries(EMPTY_SECTIONS).map(([k, [name, w]]) => `<button type="button" class="preset" data-drag="sec:${k}" aria-label="${name} section. Drag between sections, or press Enter to add">${`<div class="pz">${w.map((x, i) => `<span style="flex:${x}">${LAYOUT_LABEL[k][i]}</span>`).join("")}</div>`}<div class="p-lbl"><span class="dots">${ic("dots", 14)}</span>${name}</div></button>`).join("");
-  const mods = Object.entries(MODULE_SECTIONS).map(([k, [name]]) => `<button type="button" class="preset" data-drag="mod:${k}" aria-label="${name} section">${md.modules[k]}<div class="p-lbl"><span class="dots">${ic("dots", 14)}</span>${name}</div></button>`).join("");
-  const tbls = Object.entries(TABLE_PRESETS).map(([k, name]) => `<button type="button" class="preset" data-drag="tbl:${k}" aria-label="${name}">${md.tables[k]}<div class="p-lbl"><span class="dots">${ic("dots", 14)}</span>${name}</div></button>`).join("");
+  const comps = COMPONENTS.map(([k, name, icn]) => `<button type="button" class="comp" data-drag="el:${k}" aria-label="${name}. Drag onto the page, or press Enter to add after the selection"><span class="c-body">${ic(icn, 18, 'class="c-ico"')}<span class="c-lbl">${name}</span></span><span class="dots" aria-hidden="true">${ic("dots", 16)}</span></button>`).join("");
+  const empties = Object.entries(EMPTY_SECTIONS).map(([k, [name, w]]) => `<button type="button" class="preset" data-drag="sec:${k}" aria-label="${name} section. Drag between sections, or press Enter to add">${`<div class="pz">${w.map((x, i) => `<span style="flex:${x}">${LAYOUT_LABEL[k][i]}</span>`).join("")}</div>`}<div class="p-lbl"><span class="dots" aria-hidden="true">${ic("dots", 16)}</span>${name}</div></button>`).join("");
+  const mods = Object.entries(MODULE_SECTIONS).map(([k, [name]]) => `<button type="button" class="preset" data-drag="mod:${k}" aria-label="${name} section">${md.modules[k]}<div class="p-lbl"><span class="dots" aria-hidden="true">${ic("dots", 16)}</span>${name}</div></button>`).join("");
+  const tbls = Object.entries(TABLE_PRESETS).map(([k, name]) => `<button type="button" class="preset" data-drag="tbl:${k}" aria-label="${name}">${md.tables[k]}<div class="p-lbl"><span class="dots" aria-hidden="true">${ic("dots", 16)}</span>${name}</div></button>`).join("");
   return pg("Elements", `<div class="comp-grid">${comps}</div>`, { cls: "flush-top" }) + pg("Empty Sections", empties) + pg("Predefined Sections", mods) + pg("Predefined Tables", tbls);
 }
 function usedSet() { const j = JSON.stringify(S.T); return new Set(ALL_PLACEHOLDERS.map(([k]) => k).filter((k) => j.includes(`%${k}%`))); }
 function insertFields() {
   const used = usedSet();
-  return FIELD_GROUPS.map((g) => `<div class="fgroup" data-fgroup><h4>${g.name}</h4><div class="chips">${g.fields.map(([k, l]) => `<button type="button" class="chip${used.has(k) ? " used" : ""}" data-drag="field:${k}" data-label="${esc(l.toLowerCase())}" title="${esc(l)}" aria-label="${l}${used.has(k) ? ", already used" : ""}. Drag into a column, or press Enter to add"><span class="dots">${ic("grip", 10)}</span><span class="chip-lbl">${l}</span>${used.has(k) ? `<span class="ck">${ic("check", 12)}</span>` : ""}</button>`).join("")}</div></div>`).join("") + `<div class="empty-search" data-nofields hidden>No fields match your search.</div>`;
+  return FIELD_GROUPS.map((g) => `<div class="fgroup" data-fgroup><h4>${g.name}</h4><div class="chips">${g.fields.map(([k, l]) => `<button type="button" class="chip${used.has(k) ? " used" : ""}" data-drag="field:${k}" data-label="${esc(l.toLowerCase())}" title="${esc(l)}" aria-label="${l}${used.has(k) ? ", already used" : ""}. Drag into a column, or press Enter to add"><span class="dots">${ic("grip", 13)}</span><span class="chip-lbl">${l}</span>${used.has(k) ? `<span class="ck">${ic("check", 12)}</span>` : ""}</button>`).join("")}</div></div>`).join("") + `<div class="empty-search" data-nofields hidden>No fields match your search.</div>`;
 }
 function emptyProps() {
   return `<div class="empty"><svg class="empty-illus" width="170" height="110" viewBox="0 0 170 110" fill="none" aria-hidden="true"><rect x="8" y="28" width="154" height="78" rx="16" fill="#F1F2F8"/><rect x="38" y="8" width="96" height="90" rx="6" fill="#fff" stroke="#E3E5EF"/><rect x="50" y="20" width="40" height="5" rx="2.5" fill="#D8DBE8"/><rect x="45" y="34" width="70" height="20" rx="3" fill="#3D74E8"/><rect x="53" y="41" width="40" height="3" rx="1.5" fill="#fff" opacity=".9"/><rect x="53" y="47" width="26" height="3" rx="1.5" fill="#fff" opacity=".6"/><rect x="45" y="62" width="30" height="16" rx="2" fill="#EEF0F7"/><rect x="80" y="62" width="30" height="16" rx="2" fill="#EEF0F7"/><rect x="43" y="32" width="74" height="24" rx="4" stroke="#3D74E8" stroke-dasharray="3 2"/><rect x="41" y="30" width="4" height="4" fill="#fff" stroke="#3D74E8"/><rect x="115" y="30" width="4" height="4" fill="#fff" stroke="#3D74E8"/><path d="M112 52l14 6-6 2-2 6z" fill="#3B4256" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>
