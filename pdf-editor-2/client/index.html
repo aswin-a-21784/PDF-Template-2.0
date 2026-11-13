@@ -189,6 +189,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .seg button{position:relative;padding:0 12px;font-size:12.5px;color:var(--text);border-radius:4px;white-space:nowrap;transition:color var(--t1)}
 .seg button[aria-checked="true"],.seg button[aria-selected="true"]{color:var(--ink);font-weight:500}
 .seg button:hover{color:var(--ink)}
+.sticky-tools .seg.lg{height:30px}
 .seg.lg{height:36px;width:100%;display:grid}
 .seg.lg button{font-size:12.5px}
 
@@ -371,48 +372,55 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .check input:checked::after{transform:translateY(-1px) rotate(-45deg) scale(1)}
 
 /* search */
-.search{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border:1px solid var(--input);border-radius:5px;margin:14px 0 0;transition:border-color var(--t1),box-shadow var(--t1);color:var(--muted-2)}
+.search{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;border:1px solid var(--input);border-radius:5px;margin:12px 0 0;transition:border-color var(--t1),box-shadow var(--t1);color:var(--muted-2)}
 .search:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(28,91,217,.12)}
 .search input{flex:1;border:0;outline:0;font-size:13px;color:var(--ink);background:transparent;min-width:0}
 .search input::placeholder{color:#8A8C9C}
-.sticky-tools{position:sticky;top:0;background:#fff;z-index:3;margin:0 -20px;padding:16px 20px 14px;border-bottom:1px solid transparent;transition:border-color var(--t2),box-shadow var(--t2)}
-.sticky-tools.divided{border-bottom:1px solid var(--line);margin-bottom:4px;padding-bottom:20px}
-.tools-check{margin-top:20px;line-height:1}
-[data-pane="fields"]{padding-top:24px}
+.sticky-tools{position:sticky;top:0;background:#fff;z-index:3;margin:0 -20px;padding:20px 20px 16px;border-bottom:1px solid transparent;transition:border-color var(--t2),box-shadow var(--t2)}
+.sticky-tools.divided{border-bottom:1px solid var(--line);margin-bottom:0;padding-bottom:16px}
+.tools-check{margin-top:16px;line-height:1}
+[data-pane="fields"]{padding-top:26px}
+[data-pane="components"] > .pg{padding:28px 0 28px}
+[data-pane="components"] > .pg.flush-top{padding-top:10px}
+[data-pane="components"] .pg-head{margin-bottom:14px}
+[data-pane="components"] .preset:last-child{margin-bottom:0}
 .sticky-tools.scrolled{border-bottom-color:var(--line);box-shadow:0 4px 10px -8px rgba(24,34,54,.18)}
 
 /* insert: component cards */
-.comp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px}
-.comp{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;height:82px;border:1px solid var(--line-2);border-radius:6px;background:#fff;color:var(--text);font-size:12.5px;line-height:1.2;text-align:center;box-shadow:0 1px 0 rgba(24,34,54,.04);cursor:grab;touch-action:none;user-select:none;transition:border-color var(--t2),background var(--t2),color var(--t2),transform var(--t2) var(--ease),box-shadow var(--t2)}
+.comp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.comp{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:0;aspect-ratio:1/1;min-height:88px;padding:5px 6px 4px;border:1px solid var(--line-2);border-radius:6px;background:#fff;color:var(--text);font-size:12.5px;line-height:1.2;text-align:center;box-shadow:0 1px 0 rgba(24,34,54,.04);cursor:grab;touch-action:none;user-select:none;transition:border-color var(--t2),background var(--t2),color var(--t2),transform var(--t2) var(--ease),box-shadow var(--t2)}
 .comp:hover{border-color:var(--blue);background:var(--blue-soft);color:var(--blue);box-shadow:0 4px 12px -6px rgba(28,91,217,.35)}
 .comp:hover .c-ico{color:var(--blue);transform:translateY(-1px)}
 .comp:active{cursor:grabbing;transform:scale(.97)}
 .comp .c-ico{color:var(--ink);transition:transform var(--t2) var(--spring),color var(--t2)}
-.comp .dots{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);color:#A5A8B8}
+.comp .c-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:0;padding-bottom:3px}
+.comp .c-lbl{font-size:13px;line-height:1.18;text-wrap:balance}
+.comp .dots{color:#A5A8B8;line-height:0;flex:none}
 .comp.is-src{opacity:.4;transform:scale(.97)}
-.preset{display:block;width:100%;border:1px solid var(--line-2);border-radius:6px;background:#fff;padding:12px 12px 8px;margin-bottom:10px;cursor:grab;touch-action:none;user-select:none;text-align:center;box-shadow:0 1px 0 rgba(24,34,54,.04);transition:border-color var(--t2),background var(--t2),box-shadow var(--t2),transform var(--t2) var(--ease)}
+.preset{display:block;width:100%;border:1px solid var(--line-2);border-radius:6px;background:#fff;padding:11px 11px 10px;margin-bottom:12px;cursor:grab;touch-action:none;user-select:none;text-align:center;box-shadow:0 1px 0 rgba(24,34,54,.04);transition:border-color var(--t2),background var(--t2),box-shadow var(--t2),transform var(--t2) var(--ease)}
 .preset:hover{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 4px 12px -6px rgba(28,91,217,.3)}
 .preset:active{cursor:grabbing;transform:scale(.985)}
 .preset.is-src{opacity:.4}
-.pz{display:flex;gap:6px;height:40px}
+.pz{display:flex;gap:6px;height:45px}
 .pz span{display:grid;place-items:center;border:1px dashed #C9CBE0;background:var(--soft);border-radius:3px;font-size:11px;font-weight:600;color:var(--text);transition:border-color var(--t2),background var(--t2)}
 .preset:hover .pz span{border-color:#9DB6EE;background:#EEF3FE}
-.p-lbl{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-size:12.5px;color:var(--text)}
+.p-lbl{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;font-size:13px;color:var(--text)}
 .preset:hover .p-lbl{color:var(--blue)}
 .p-lbl .dots{color:#A5A8B8}
 .mini-doc{position:relative;height:54px;overflow:hidden;border-radius:3px;background:#fff;pointer-events:none;border:1px solid #F0F1F7}
 .mini-doc-inner{position:absolute;top:6px;left:8px;width:640px;transform-origin:0 0}
 
 /* insert: module field chips */
-.fgroup{margin-bottom:26px}
-.fgroup h4{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);margin:0 0 12px}
-.chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.chip{display:flex;align-items:center;gap:5px;min-width:0;height:34px;padding:0 7px 0 4px;border:1px solid var(--line-2);border-radius:5px;background:#fff;font-size:12px;color:var(--ink);text-align:left;cursor:grab;touch-action:none;user-select:none;transition:border-color var(--t2),background var(--t2),box-shadow var(--t2),transform var(--t1) var(--ease),opacity var(--t2)}
+.fgroup{margin-bottom:32px}
+.fgroup h4{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);margin:0 0 14px}
+.chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 6px}
+.chip{display:flex;align-items:center;gap:2px;min-width:0;height:30px;padding:0 7px 0 5px;border:1px solid var(--line-2);border-radius:4px;background:#fff;font-size:12px;color:var(--ink);text-align:left;cursor:grab;touch-action:none;user-select:none;transition:border-color var(--t2),background var(--t2),box-shadow var(--t2),transform var(--t1) var(--ease),opacity var(--t2)}
 .chip .dots{color:#A5A8B8;flex:none}
-.chip span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip .chip-lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip .ck{flex:none;line-height:0;margin-left:4px}
 .chip:hover{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 3px 10px -6px rgba(28,91,217,.4)}
 .chip:active{cursor:grabbing;transform:scale(.97)}
-.chip.used{background:var(--canvas);color:var(--muted-2)}
+.chip.used{background:#F5F6FC;color:#8A8C9C}
 .chip.used .ck{color:var(--blue-2)}
 .chip.is-src{opacity:.4}
 .empty-search{padding:30px 10px;text-align:center;color:var(--muted-2);font-size:12.5px}
@@ -1342,7 +1350,7 @@ function bgImageCtl(p) {
 }
 function panelInsert() {
   const tab = S.ui.insertTab;
-  const tabs = `<div class="sticky-tools divided" data-sticky>${seg("__insertTab", [["components", "Components"], ["fields", "Module Fields"]], { value: tab, ui: "insertTab", cls: "lg", aria: "Insert type" })}${tab === "fields" ? `<div class="tools-check"><label class="check"><input type="checkbox" data-ui-check="unusedOnly"${S.ui.unusedOnly ? " checked" : ""}>Show only unused fields</label></div><label class="search">${ic("search", 14)}<input type="search" placeholder="Search" data-ui-search value="${esc(S.ui.search)}" aria-label="Search module fields"></label>` : ""}</div>`;
+  const tabs = `<div class="sticky-tools${tab === "fields" ? " divided" : ""}" data-sticky>${seg("__insertTab", [["components", "Components"], ["fields", "Module Fields"]], { value: tab, ui: "insertTab", cls: "lg", aria: "Insert type" })}${tab === "fields" ? `<div class="tools-check"><label class="check"><input type="checkbox" data-ui-check="unusedOnly"${S.ui.unusedOnly ? " checked" : ""}>Show only unused fields</label></div><label class="search">${ic("search", 14)}<input type="search" placeholder="Search" data-ui-search value="${esc(S.ui.search)}" aria-label="Search module fields"></label>` : ""}</div>`;
   return tabs + `<div class="tabpane" data-pane="${tab}">${tab === "components" ? insertComponents() : insertFields()}</div>`;
 }
 let __miniCache = null;
@@ -1358,7 +1366,7 @@ function miniDocs() {
 }
 function insertComponents() {
   const md = miniDocs();
-  const comps = COMPONENTS.map(([k, name, icn]) => `<button type="button" class="comp" data-drag="el:${k}" aria-label="${name}. Drag onto the page, or press Enter to add after the selection">${ic(icn, 18, 'class="c-ico"')}<span>${name.replace(" ", "<br>")}</span><span class="dots">${ic("dots", 14)}</span></button>`).join("");
+  const comps = COMPONENTS.map(([k, name, icn]) => `<button type="button" class="comp" data-drag="el:${k}" aria-label="${name}. Drag onto the page, or press Enter to add after the selection"><span class="c-body">${ic(icn, 18, 'class="c-ico"')}<span class="c-lbl">${name}</span></span><span class="dots" aria-hidden="true">${ic("dots", 10)}</span></button>`).join("");
   const empties = Object.entries(EMPTY_SECTIONS).map(([k, [name, w]]) => `<button type="button" class="preset" data-drag="sec:${k}" aria-label="${name} section. Drag between sections, or press Enter to add">${`<div class="pz">${w.map((x, i) => `<span style="flex:${x}">${LAYOUT_LABEL[k][i]}</span>`).join("")}</div>`}<div class="p-lbl"><span class="dots">${ic("dots", 14)}</span>${name}</div></button>`).join("");
   const mods = Object.entries(MODULE_SECTIONS).map(([k, [name]]) => `<button type="button" class="preset" data-drag="mod:${k}" aria-label="${name} section">${md.modules[k]}<div class="p-lbl"><span class="dots">${ic("dots", 14)}</span>${name}</div></button>`).join("");
   const tbls = Object.entries(TABLE_PRESETS).map(([k, name]) => `<button type="button" class="preset" data-drag="tbl:${k}" aria-label="${name}">${md.tables[k]}<div class="p-lbl"><span class="dots">${ic("dots", 14)}</span>${name}</div></button>`).join("");
@@ -1367,7 +1375,7 @@ function insertComponents() {
 function usedSet() { const j = JSON.stringify(S.T); return new Set(ALL_PLACEHOLDERS.map(([k]) => k).filter((k) => j.includes(`%${k}%`))); }
 function insertFields() {
   const used = usedSet();
-  return FIELD_GROUPS.map((g) => `<div class="fgroup" data-fgroup><h4>${g.name}</h4><div class="chips">${g.fields.map(([k, l]) => `<button type="button" class="chip${used.has(k) ? " used" : ""}" data-drag="field:${k}" data-label="${esc(l.toLowerCase())}" title="${esc(l)}" aria-label="${l}${used.has(k) ? ", already used" : ""}. Drag into a column, or press Enter to add"><span class="dots">${ic("grip", 14)}</span><span>${l}</span>${used.has(k) ? `<span class="ck">${ic("check", 14)}</span>` : ""}</button>`).join("")}</div></div>`).join("") + `<div class="empty-search" data-nofields hidden>No fields match your search.</div>`;
+  return FIELD_GROUPS.map((g) => `<div class="fgroup" data-fgroup><h4>${g.name}</h4><div class="chips">${g.fields.map(([k, l]) => `<button type="button" class="chip${used.has(k) ? " used" : ""}" data-drag="field:${k}" data-label="${esc(l.toLowerCase())}" title="${esc(l)}" aria-label="${l}${used.has(k) ? ", already used" : ""}. Drag into a column, or press Enter to add"><span class="dots">${ic("grip", 10)}</span><span class="chip-lbl">${l}</span>${used.has(k) ? `<span class="ck">${ic("check", 12)}</span>` : ""}</button>`).join("")}</div></div>`).join("") + `<div class="empty-search" data-nofields hidden>No fields match your search.</div>`;
 }
 function emptyProps() {
   return `<div class="empty"><svg class="empty-illus" width="170" height="110" viewBox="0 0 170 110" fill="none" aria-hidden="true"><rect x="8" y="28" width="154" height="78" rx="16" fill="#F1F2F8"/><rect x="38" y="8" width="96" height="90" rx="6" fill="#fff" stroke="#E3E5EF"/><rect x="50" y="20" width="40" height="5" rx="2.5" fill="#D8DBE8"/><rect x="45" y="34" width="70" height="20" rx="3" fill="#3D74E8"/><rect x="53" y="41" width="40" height="3" rx="1.5" fill="#fff" opacity=".9"/><rect x="53" y="47" width="26" height="3" rx="1.5" fill="#fff" opacity=".6"/><rect x="45" y="62" width="30" height="16" rx="2" fill="#EEF0F7"/><rect x="80" y="62" width="30" height="16" rx="2" fill="#EEF0F7"/><rect x="43" y="32" width="74" height="24" rx="4" stroke="#3D74E8" stroke-dasharray="3 2"/><rect x="41" y="30" width="4" height="4" fill="#fff" stroke="#3D74E8"/><rect x="115" y="30" width="4" height="4" fill="#fff" stroke="#3D74E8"/><path d="M112 52l14 6-6 2-2 6z" fill="#3B4256" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>
@@ -1434,10 +1442,10 @@ function panelElement(L) {
     case "field": {
       const tab = S.ui.fieldTab;
       const lay = sel(ep + ".layout", [["between", "Space Between"], ["stacked", "Stacked"], ["inline", "Inline"]], { rr: true, aria: "Value layout" });
-      return pg("Cell Content", row("Value", lay.html, { id: lay.id }) + row("Alignment", iconSeg(ep + ".align", TA_OPTS, { aria: "Alignment" })), { cls: "flush-top" }) +
+      return pg("Cell Content", row("Value", lay.html, { id: lay.id }) + row("Alignment", iconSeg(ep + ".align", TA3_OPTS, { aria: "Alignment" })), { cls: "flush-top" }) +
         `<div class="ptabs divided">${seg("__fieldTab", [["label", "Label"], ["value", "Value"]], { value: tab, ui: "fieldTab", cls: "lg", aria: "Edit label or value" })}</div>` +
-        `<div class="tabpane">${tab === "label" ? `${row("Label", txt(ep + ".label", { aria: "Label" }).html)}<p class="hint" style="text-align:right">Default Label : <b>${esc(e.defaultLabel)}</b></p>${fmtGroup(ep + ".labelFmt", e.labelBase, { cls: "flush-top" })}`
-          : `<div class="rte"><div class="rte-bar">${phMenuBtn("fieldval")}</div><textarea class="textarea" style="border:0;border-radius:0 0 6px 6px;box-shadow:none" data-b="${ep}.value" data-t="str" data-ph-target="fieldval" aria-label="Value" spellcheck="false">${esc(e.value)}</textarea></div>${fmtGroup(ep + ".valueFmt", e.valueBase, { cls: "flush-top" })}`}</div>`;
+        `<div class="tabpane">${tab === "label" ? `${row("Label", txt(ep + ".label", { aria: "Label" }).html)}<p class="hint" style="text-align:right">Default Label : <b>${esc(e.defaultLabel)}</b></p>${fmtGroup(ep + ".labelFmt", e.labelBase, { cls: "flush-top", ta3: true })}`
+          : `<div class="rte"><div class="rte-bar">${phMenuBtn("fieldval")}</div><textarea class="textarea" style="border:0;border-radius:0 0 6px 6px;box-shadow:none" data-b="${ep}.value" data-t="str" data-ph-target="fieldval" aria-label="Value" spellcheck="false">${esc(e.value)}</textarea></div>${fmtGroup(ep + ".valueFmt", e.valueBase, { cls: "flush-top", ta3: true })}`}</div>`;
     }
     case "table": return panelTable(L);
     case "static": return panelStatic(L);
@@ -1483,8 +1491,8 @@ function panelTcol(L) {
   const tab = S.ui.colTab;
   const tabs = `<div class="ptabs divided" style="margin-top:16px">${seg("__colTab", [["label", "Column Label"], ["value", "Column Value"]], { value: tab, ui: "colTab", cls: "lg", aria: "Edit column label or value" })}</div>`;
   const headBase = { size: 10, caps: true, ls: .7, weight: 500, color: MUTED };
-  if (tab === "label") return tabs + `<div class="tabpane">${txtRow("Header Label", cp + ".label")}${fmtGroup(cp + ".labelFmt", headBase, { cls: "flush-top" })}</div>`;
-  const valPart = (title, ph, fpath, base) => pg(title, row("Value", `<span class="readonly-token">{{${ph}}}</span>`), { cls: "flush-top" }) + fmtGroup(fpath, base, { cls: "flush-top" });
+  if (tab === "label") return tabs + `<div class="tabpane">${txtRow("Header Label", cp + ".label")}${fmtGroup(cp + ".labelFmt", headBase, { cls: "flush-top", ta3: true })}</div>`;
+  const valPart = (title, ph, fpath, base) => pg(title, row("Value", `<span class="readonly-token">{{${ph}}}</span>`), { cls: "flush-top" }) + fmtGroup(fpath, base, { cls: "flush-top", ta3: true });
   return tabs + `<div class="tabpane">${valPart(k[2] ? "Item" : "Value", k[1], cp + ".valueFmt", { size: 12.5, color: DARK, align: c.align })}${k[2] ? `<div style="border-top:1px dashed #D5D7E3;margin-top:4px"></div>${valPart("Item Description", k[2], cp + ".descFmt", { size: 11.5, color: MUTED, align: c.align })}` : ""}</div>`;
 }
 function panelScell(L) {
@@ -1810,7 +1818,7 @@ function renderPanel(o = {}) {
   inner.classList.add(o.soft ? "x" : o.enter ? "enter" : "enter-soft");
   body.scrollTop = keep;
   $$('input[type=range]', inner).forEach(syncRange);
-  if (S.mode === "insert" && S.ui.insertTab === "fields") filterFields();
+  if (S.mode === "insert" && S.ui.insertTab === "fields") { filterFields(); requestAnimationFrame(fitChips); }
   updateRail(); refreshDerived();
 }
 const headAct = (label, icn, act, kbd) => `<button type="button" class="icon-btn" data-act="${act}" data-tip="${label}"${kbd ? ` data-kbd="${kbd}"` : ""} aria-label="${label}">${ic(icn, 15)}</button>`;
@@ -2026,6 +2034,9 @@ function startSort(e, grip) {
     if (to !== from) reorder(list.dataset.sortable, from, to); else { rowEl.style.transform = ""; rowEl.classList.remove("dragging"); rows.forEach((r) => (r.style.transform = "")); } };
   grip.addEventListener("pointermove", move); grip.addEventListener("pointerup", up); grip.addEventListener("pointercancel", up);
 }
+function fitChips() {
+  $$(".chip-lbl", panelEl).forEach((s) => { s.style.fontSize = ""; let f = 12; while (s.scrollWidth > s.clientWidth + .5 && f > 11.5) { f -= .25; s.style.fontSize = f + "px"; } });
+}
 function filterFields() {
   const q = S.ui.search.trim().toLowerCase(); let any = false;
   $$("[data-fgroup]", panelEl).forEach((g) => { let vis = 0; $$(".chip", g).forEach((c) => { const show = (!q || c.dataset.label.includes(q)) && !(S.ui.unusedOnly && c.classList.contains("used")); c.hidden = !show; if (show) vis++; }); g.hidden = !vis; if (vis) any = true; });
@@ -2087,7 +2098,16 @@ const modsOf = (e) => ({ el: !!(e && (e.metaKey || e.ctrlKey)), col: !!(e && e.a
 /* Selection follows the hierarchy: Section → Column → Element (→ table cell).
    Plain hover/click reaches one level below the current selection, and only inside it;
    anywhere else only sections respond. ⌘/Ctrl jumps straight to elements, Option/Alt to columns. */
-function hitTarget(node, mods = {}) {
+function isAncestor(t, s) {
+  if (!t || !s || t.sid !== s.sid) return false;
+  if (t.kind === "section" || t.kind === "header" || t.kind === "footer") return s.kind !== t.kind;
+  if (t.kind === "column") return s.cid === t.cid && (s.kind === "element" || s.kind === "tcol" || s.kind === "scell");
+  if (t.kind === "element") return s.eid === t.eid && (s.kind === "tcol" || s.kind === "scell");
+  return false;
+}
+/* Parents are reached from the breadcrumb or the keyboard, never by pointing at them */
+function hitTarget(node, mods = {}) { const t = hitRaw(node, mods); return t && isAncestor(t, S.sel) ? null : t; }
+function hitRaw(node, mods = {}) {
   if (!node || !node.closest || !node.closest("#page")) return null;
   const s = S.sel;
   const secN = node.closest("[data-sid]"); if (!secN) return { kind: "page" };
@@ -2281,10 +2301,20 @@ function handleAddSec(e) {
   if (S.dnd || S.inline) return; const b = sectionBounds(); if (!b.xs) return;
   const w = wrap.getBoundingClientRect(), py = e.clientY - w.top, px = e.clientX - w.left;
   const hit = b.list.find((x) => Math.abs(x.y - py) < 9) ;
-  if (hit && px > b.xs.x - 10 && px < b.xs.x + b.xs.w + 10) { clearTimeout(addsecHide); OV.addsec.style.transform = `translate(${b.xs.x}px,${hit.y}px)`; OV.addsec.style.width = b.xs.w + "px"; OV.addsec.dataset.idx = hit.i; OV.addsec.classList.add("show"); }
+  if (hit && px > b.xs.x - 10 && px < b.xs.x + b.xs.w + 10) {
+    clearTimeout(addsecHide); OV.addsec.style.transform = `translate(${b.xs.x}px,${hit.y}px)`; OV.addsec.style.width = b.xs.w + "px"; OV.addsec.dataset.idx = hit.i;
+    // if the floating action bar sits on this gap, move the add buttons beside it instead of on top of it
+    const btns = OV.addsec.querySelector(".btns"); let left = "50%";
+    if (OV.abar.classList.contains("show")) { const ar = relRect(OV.abar); if (hit.y > ar.y - 22 && hit.y < ar.y + ar.h + 22) left = Math.min(b.xs.w - 60, ar.x - b.xs.x + ar.w + 70) + "px"; }
+    btns.style.left = left; OV.addsec.classList.add("show");
+  }
   else if (!OV.addsec.matches(":hover")) hideAddSec();
 }
-function hideAddSec(now) { clearTimeout(addsecHide); if (now || (!OV.addsec.matches(":hover") && !OV.addsec.contains(document.activeElement))) OV.addsec.classList.remove("show"); }
+function hideAddSec(now) {
+  clearTimeout(addsecHide);
+  const kbd = OV.addsec.contains(document.activeElement) && document.activeElement.matches(":focus-visible");
+  if (now || (!OV.addsec.matches(":hover") && !kbd)) OV.addsec.classList.remove("show");
+}
 
 /* ===================== Menus, tips, toasts, modal ===================== */
 function openMenu(anchor, items) {
@@ -2391,7 +2421,7 @@ function init() {
 
   // canvas
   const hoverAt = (target, mods) => { const t = hitTarget(target, mods); if (!sameSel(t, S.hover)) { S.hover = t; updateOverlays(); } };
-  wrap.addEventListener("pointermove", (e) => { if (S.dnd || S.sorting) return; if (e.target.closest(".overlay")) { handleAddSec(e); return; } S.ptr = e.target; hoverAt(e.target, modsOf(e)); handleAddSec(e); });
+  wrap.addEventListener("pointermove", (e) => { if (S.dnd || S.sorting) return; if (e.target.closest(".abar, .dismiss")) { hideAddSec(true); return; } if (e.target.closest(".overlay")) { handleAddSec(e); return; } S.ptr = e.target; hoverAt(e.target, modsOf(e)); handleAddSec(e); });
   wrap.addEventListener("pointerleave", () => { S.ptr = null; S.hover = null; updateOverlays(); hideAddSec(); });
   const modKey = (e) => { if (!["Meta", "Control", "Alt"].includes(e.key) || !S.ptr || S.dnd || isTyping(e.target)) return; hoverAt(S.ptr, modsOf(e)); };
   document.addEventListener("keydown", modKey); document.addEventListener("keyup", modKey);
@@ -2410,6 +2440,7 @@ function init() {
   $("#ovDismiss").addEventListener("click", () => deleteSel());
   $("#addsec").addEventListener("click", (e) => {
     const b = e.target.closest("[data-as]"); if (!b) return; const idx = +OV.addsec.dataset.idx;
+    const viaKeyboard = b.matches(":focus-visible"); if (!viaKeyboard) b.blur(); hideAddSec(true);
     if (b.dataset.as === "plus") { hideAddSec(true); insertAt("sec", "single", { idx }); }
     else { const sec = mkSection([mkCol(100, [b.dataset.as === "divider" ? mkDivider() : mkSpacer(24)])], { margin: { t: 4, r: 0, b: 4, l: 0 } }); mutate(() => S.T.sections.splice(idx, 0, sec), { canvas: false }); S.flash = { sid: sec.id, label: b.dataset.as === "divider" ? "Divider" : "Spacer", green: true }; renderCanvas({ flip: true }); hideAddSec(true); select({ kind: "element", sid: sec.id, cid: sec.cols[0].id, eid: sec.cols[0].els[0].id }); }
   });
