@@ -1433,9 +1433,7 @@ function panelElement(L) {
     case "heading": return pg("Text Value", `<div class="row stack"><div class="ctl" style="justify-content:space-between"><span class="lbl" style="font-size:13px">Text</span>${phMenuBtn("heading")}</div><label class="field grow fill-w"><input type="text" data-b="${ep}.text" data-t="str" data-ph-target="heading" value="${esc(e.text)}" aria-label="Heading text" spellcheck="false"></label></div>`, { cls: "flush-top" }) + fmtGroup(ep + ".fmt", e.base);
     case "text": {
       const ef = effFmt(e.base, e.fmt, S.T.page);
-      const lhId = nid();
-      return pg("Layout &amp; Spacing", row("Alignment", iconSeg(ep + ".fmt.align", TA_OPTS, { value: ef.align || "left", aria: "Text alignment" })) +
-        row("Line Height", `<label class="field w-lg"><span class="pre">${ic("lineHeight", 14)}</span><input id="${lhId}" type="number" inputmode="decimal" data-b="${ep}.fmt.lh" data-t="num" data-min="0" data-max="40" value="${ef.lh}" aria-label="Line height"></label>`, { id: lhId }) + lsRow(ep + ".fmt", ef.ls), { cls: "flush-top" }) +
+      return pg("Layout &amp; Spacing", row("Alignment", iconSeg(ep + ".fmt.align", TA_OPTS, { value: ef.align || "left", aria: "Text alignment" })), { cls: "flush-top" }) +
         pg("Text Value", `<div class="rte"><div class="rte-bar" role="toolbar" aria-label="Text formatting">${[["bold", "bold", "Bold"], ["italic", "italic", "Italic"], ["strikeThrough", "strike", "Strikethrough"], ["underline", "underline", "Underline"]].map(([cmd, icn, t]) => `<button type="button" class="icon-btn" data-rte="${cmd}" data-tip="${t}" aria-label="${t}" aria-pressed="false">${ic(icn, 14)}</button>`).join("")}${hlBtn('data-act="rte-hl"', "").replace('class="hl-btn"', 'class="icon-btn hl-btn"')}
           <span class="mini-sel"><select data-b="${ep}.fmt.size" data-t="num" aria-label="Font size">${[...new Set([...SIZES, +ef.size])].sort((a, b) => a - b).map((s) => `<option value="${s}"${+s === +ef.size ? " selected" : ""}>${s} Px</option>`).join("")}</select>${ic("chev", 11, 'class="chev"')}</span>
           <span class="mini-sel"><select data-b="${ep}.fmt.font" data-t="str" aria-label="Font">${FONTS.map((f) => `<option${f === (ef.font || S.T.page.font) ? " selected" : ""}>${f}</option>`).join("")}</select>${ic("chev", 11, 'class="chev"')}</span>
@@ -1512,7 +1510,7 @@ function panelScell(L) {
 /* ===================== State ===================== */
 const LS_KEY = "pdfeditor2.v2";
 const S = {
-  T: null, sel: null, hover: null, mode: "props", zoom: 90, sample: true, pageW: 794, pageH: 1123,
+  T: null, sel: null, hover: null, mode: "page", zoom: 90, sample: true, pageW: 794, pageH: 1123,
   ui: { insertTab: "components", fieldTab: "label", colTab: "label", search: "", unusedOnly: false, picking: false, pickStyle: null, variant: "first", tabsKey: "" },
   inline: null, saved: null, dnd: null, sorting: false, justDragged: false, hatchSpec: null, menu: null,
 };
@@ -1971,7 +1969,7 @@ function doAction(act, a, e) {
     case "str-del": { const L = locate(S.sel); mutate(() => { const [r] = L.e.rows.splice(+a.dataset.j, 1); delete L.e.cells[r.id]; }, { panel: true }); break; }
     case "tot-hide": { const L = locate(S.sel); mutate(() => { const r = L.e.rows[+a.dataset.j]; r.hidden = !r.hidden; }, { panel: true }); break; }
     case "ph-menu": phMenu(a, a.dataset.target); break;
-    case "rte-more": openMenu(a, [{ text: "Insert placeholder…", icon: "placeholder", fn: () => phMenu(a, "rte") }, { text: "Clear formatting", icon: "reset", fn: () => { const b = $("[data-rte-body]", panelEl); b.focus(); document.execCommand("selectAll"); document.execCommand("removeFormat"); onRte(b); } }]); break;
+    case "rte-more": openMenu(a, [{ text: "Insert placeholder…", icon: "placeholder", fn: () => phMenu(a, "rte") }, { text: "Clear formatting", icon: "reset", fn: () => { const b = $("[data-rte-body]", panelEl); b.focus(); restoreRteRange(); const s = getSelection(); if (!s.rangeCount || s.isCollapsed || !b.contains(s.anchorNode)) document.execCommand("selectAll"); document.execCommand("removeFormat"); onRte(b); } }]); break;
     case "delete-sel": deleteSel(); break;
     case "close-panel": S.hover = null; select(null); break;
     case "dup-sel": dupSel(); break;
@@ -2054,7 +2052,11 @@ function restoreRteRange() { if (!rteRange) return; const s = getSelection(); s.
 function updateRteState() { $$("[data-rte]", panelEl).forEach((b) => { let on = false; try { on = document.queryCommandState(b.dataset.rte); } catch (_) {} b.setAttribute("aria-pressed", on); }); }
 function sanitize(html) {
   const tpl = document.createElement("template"); tpl.innerHTML = html; const ok = new Set(["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "BR", "DIV", "P", "SPAN"]);
-  const walk = (n) => [...n.childNodes].forEach((c) => { if (c.nodeType === 1) { walk(c); if (!ok.has(c.tagName)) c.replaceWith(...c.childNodes); else { const bg = c.tagName === "SPAN" && c.style.backgroundColor; [...c.attributes].forEach((a) => c.removeAttribute(a.name)); if (bg && bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)") c.setAttribute("style", `background-color:${bg}`); } } else if (c.nodeType !== 3) c.remove(); });
+  const walk = (n) => [...n.childNodes].forEach((c) => { if (c.nodeType === 1) { walk(c); if (!ok.has(c.tagName)) c.replaceWith(...c.childNodes); else {
+        const keep = [];
+        if (c.tagName === "SPAN") { const bg = c.style.backgroundColor; if (bg && bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)") keep.push(`background-color:${bg}`); }
+        [...c.attributes].forEach((a) => c.removeAttribute(a.name)); if (keep.length) c.setAttribute("style", keep.join(";"));
+      } } else if (c.nodeType !== 3) c.remove(); });
   walk(tpl.content); return tpl.innerHTML;
 }
 function onRte(body) { setPath(S.T, body.dataset.rteBody, sanitize(body.innerHTML)); scheduleCanvas(); scheduleHistory(); }
@@ -2333,7 +2335,7 @@ function openMenu(anchor, items) {
   S.menu = { m, anchor }; anchor.setAttribute("aria-expanded", "true");
   requestAnimationFrame(() => { const f = m.querySelector("button[data-i]"); f && f.focus({ preventScroll: true }); });
 }
-function closeMenu(refocus) { if (!S.menu) return; const { m, anchor } = S.menu; S.menu = null; anchor.setAttribute("aria-expanded", "false"); m.remove(); if (refocus && document.contains(anchor)) anchor.focus({ preventScroll: true }); }
+function closeMenu(refocus) { if (!S.menu) return; const { m, anchor, onClose } = S.menu; S.menu = null; if (onClose) onClose(); anchor.setAttribute("aria-expanded", "false"); m.remove(); if (refocus && document.contains(anchor)) anchor.focus({ preventScroll: true }); }
 const TIP = { el: null, timer: 0, target: null, last: 0 };
 function showTip(t) {
   if (!document.contains(t) || S.dnd) return; const tip = TIP.el;
@@ -2411,7 +2413,7 @@ function init() {
   panelEl.addEventListener("change", (e) => { const t = e.target; if (t.matches("[data-b]")) onBind(t, true); else if (t.matches("[data-ui-check]")) { S.ui[t.dataset.uiCheck] = t.checked; filterFields(); } else if (t.matches("[data-act-input]")) onActInput(t); });
   panelEl.addEventListener("click", onPanelClick);
   panelEl.addEventListener("keydown", onPanelKey);
-  panelEl.addEventListener("mousedown", (e) => { if (e.target.closest("[data-rte]")) e.preventDefault(); });
+  panelEl.addEventListener("mousedown", (e) => { if (e.target.closest('[data-rte], [data-act="rte-more"], [data-act="rte-hl"]')) e.preventDefault(); });
   panelEl.addEventListener("pointerdown", (e) => { const g = e.target.closest("[data-grip]"); if (g && e.button === 0) { e.preventDefault(); startSort(e, g); } });
   document.addEventListener("selectionchange", () => { if (document.activeElement && document.activeElement.matches && document.activeElement.matches("[data-rte-body]")) { saveRteRange(); updateRteState(); } });
   const hatchOn = (e) => { const h = e.target.closest && e.target.closest("[data-hatch]"); if (h) showHatch(h.dataset.hatch); };
